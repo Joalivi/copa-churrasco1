@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { Activity } from "@/types";
 import { PendingToast } from "@/components/layout/pending-toast";
-import { formatCurrency, calculateBottleCost, cn } from "@/lib/utils";
+import { formatCurrency, calculateBottleCost, calcChopp, cn } from "@/lib/utils";
 
 interface Participant {
   id: string;
@@ -111,6 +111,51 @@ export function ActivityCard({
               {activity.description}
             </p>
           )}
+
+          {/* Info estimativa — Churrasco */}
+          {activity.name === "Churrasco" && activity.checkin_count > 0 && (() => {
+            const count = activity.checkin_count;
+            const meatKg = count * 0.5;
+            const meatCost = meatKg * 40;
+            return (
+              <div className="mt-2 bg-red-50/60 border border-red-100 rounded-xl px-3 py-2 space-y-1">
+                <p className="text-xs text-zinc-600">
+                  <span className="font-semibold">Carne total:</span> {meatKg.toFixed(1)}kg <span className="text-zinc-400">({count} x 500g)</span>
+                </p>
+                <p className="text-xs text-zinc-600">
+                  <span className="font-semibold">Custo estimado:</span> {formatCurrency(meatCost)} <span className="text-zinc-400">({meatKg.toFixed(1)}kg x R$40)</span>
+                </p>
+                <p className="text-[10px] text-zinc-400">
+                  Fechamento: {formatCurrency(meatCost / count)}/pessoa
+                </p>
+              </div>
+            );
+          })()}
+
+          {/* Info estimativa — Chopp */}
+          {activity.name === "Chopp" && activity.checkin_count > 0 && (() => {
+            const count = activity.checkin_count;
+            const chopp = calcChopp(count);
+            const barrelParts: string[] = [];
+            if (chopp.barrels50 > 0) barrelParts.push(`${chopp.barrels50}x 50L`);
+            if (chopp.barrels30 > 0) barrelParts.push(`${chopp.barrels30}x 30L`);
+            const barrelText = barrelParts.join(" + ") || "—";
+            return (
+              <div className="mt-2 bg-amber-50/60 border border-amber-100 rounded-xl px-3 py-2 space-y-1">
+                <p className="text-xs text-zinc-600">
+                  <span className="font-semibold">Total necessario:</span> {count * 4}L <span className="text-zinc-400">({count} x 4L)</span>
+                </p>
+                <p className="text-xs text-zinc-600">
+                  <span className="font-semibold">Barris:</span> {barrelText} <span className="text-zinc-400">= {chopp.total}L</span>
+                </p>
+                <p className="text-[10px] text-zinc-400">
+                  {chopp.waste > 0 && `${chopp.waste}L de folga`}
+                  {chopp.waste < 0 && `${Math.abs(chopp.waste)}L abaixo (dentro da margem 20%)`}
+                  {chopp.waste === 0 && "Quantidade exata"}
+                </p>
+              </div>
+            );
+          })()}
 
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2">
             <span
