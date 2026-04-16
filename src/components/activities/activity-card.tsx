@@ -56,12 +56,26 @@ export function ActivityCard({
           activity.people_per_bottle ?? 1
         );
         return `~${formatCurrency(bottleCost)}/pessoa`;
-      case "total_split":
-        if (activity.total_cost && activity.checkin_count > 0) {
+      case "total_split": {
+        if (activity.checkin_count === 0) return "Valor a definir";
+        // Churrasco: 500g/pessoa x R$40/kg = R$20/pessoa
+        if (activity.name === "Churrasco") {
+          const perPerson = 0.5 * 40;
+          return `~${formatCurrency(perPerson)}/pessoa`;
+        }
+        // Chopp: litros dos barris x R$12/L / checkins
+        if (activity.name === "Chopp") {
+          const chopp = calcChopp(activity.checkin_count);
+          const totalCost = chopp.total * (activity.unit_price ?? 12);
+          return `~${formatCurrency(totalCost / activity.checkin_count)}/pessoa`;
+        }
+        // Outros total_split: usa total_cost do admin
+        if (activity.total_cost) {
           const split = activity.total_cost / activity.checkin_count;
           return `~${formatCurrency(split)}/pessoa`;
         }
         return "Valor a definir";
+      }
       default:
         return "";
     }
