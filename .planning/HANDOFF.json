@@ -1,0 +1,45 @@
+{
+  "version": "1.0",
+  "timestamp": "2026-04-16T01:49:24.340Z",
+  "phase": null,
+  "phase_name": "copa-churrasco platform improvements",
+  "phase_dir": ".planning",
+  "plan": 1,
+  "task": null,
+  "total_tasks": null,
+  "status": "paused",
+  "completed_tasks": [
+    {"id": 1, "name": "Visual improvements with real photos + Brasil banner", "status": "done", "commit": "ab725e2"},
+    {"id": 2, "name": "Photo gallery page /fotos with lightbox", "status": "done", "commit": "ab725e2"},
+    {"id": 3, "name": "Fix gallery filters mobile + reclassify photos", "status": "done", "commit": "11bea01"},
+    {"id": 4, "name": "Fix nav overlapping bolao confirm button", "status": "done", "commit": "8324dfe"},
+    {"id": 5, "name": "Local stadium image instead of broken URL", "status": "done", "commit": "e635e26"},
+    {"id": 6, "name": "Meat + chopp calculators on event details", "status": "done", "commit": "6e5bfff"},
+    {"id": 7, "name": "Bolao: paid-only tickets + heat map grid + quick wins", "status": "done", "commit": "7cf27a6"},
+    {"id": 8, "name": "constants.ts + validators.ts + next/image avatars", "status": "done", "commit": "7cf27a6"},
+    {"id": 9, "name": "Git author rewrite to joalivijoao@gmail.com", "status": "done", "commit": "e20ab0f"},
+    {"id": 10, "name": "Delete remote master branch", "status": "done", "commit": null}
+  ],
+  "remaining_tasks": [
+    {"id": 11, "name": "Constants not fully centralized - user-summary/route.ts and create-session/route.ts still hardcode 1650/35", "status": "not_started"},
+    {"id": 12, "name": "admin/summary/route.ts and payments/stats/route.ts define local TOTAL_RENTAL instead of importing from constants.ts", "status": "not_started"},
+    {"id": 13, "name": "event-details.tsx still hardcodes meat/chopp values instead of importing constants", "status": "not_started"},
+    {"id": 14, "name": "Webhook idempotency - check if already partially done (stripe_session_id check exists but may not fully prevent dupes)", "status": "not_started"},
+    {"id": 15, "name": "Empty states in atividades page", "status": "not_started"},
+    {"id": 16, "name": "attendee-card.tsx may still use vanilla img (needs verification)", "status": "not_started"}
+  ],
+  "blockers": [],
+  "human_actions_pending": [
+    {"action": "Update NEXT_PUBLIC_APP_URL in Vercel env vars to https://copa-churrasco1.vercel.app/", "context": "Currently may still point to localhost, causing auth redirects to fail", "blocking": true},
+    {"action": "Update Supabase auth redirect URLs to include production domain", "context": "Google OAuth redirect goes to localhost otherwise", "blocking": true}
+  ],
+  "decisions": [
+    {"decision": "Chopp algorithm allows up to 20% deficit", "rationale": "User specified rounding down is acceptable within 20% margin", "phase": null},
+    {"decision": "Bolao shows paid tickets publicly, pending only to ticket owner", "rationale": "User wanted only paid tickets visible in grid counts", "phase": null},
+    {"decision": "Activities keep showing all checkins regardless of payment", "rationale": "User explicitly requested this distinction from bolao", "phase": null},
+    {"decision": "Vercel deploys from copa-churrasco1 repo (not copa-churrasco)", "rationale": "Vercel was linked to wrong repo initially, fixed by changing git remote", "phase": null}
+  ],
+  "uncommitted_files": [],
+  "next_action": "Finish centralizing constants: import from @/lib/constants in user-summary/route.ts, create-session/route.ts, admin/summary/route.ts, payments/stats/route.ts, event-details.tsx. Then verify webhook idempotency and empty states.",
+  "context_notes": "Platform is deployed at https://copa-churrasco1.vercel.app/. All major features done. Remaining work is polish: centralizing remaining hardcoded constants, webhook safety, and empty states. The plan file at .claude/plans/silly-swinging-panda.md has the full audit-based improvement plan."
+}
