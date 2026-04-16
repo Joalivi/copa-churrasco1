@@ -1,6 +1,7 @@
 import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe";
 import { calculateBottleCost } from "@/lib/utils";
+import { criarPaymentItems } from "@/lib/payment-helpers";
 
 interface PaymentItemInput {
   type: "activity" | "bolao" | "expense_share" | "aviso";
@@ -184,6 +185,51 @@ export async function POST(request: Request) {
     );
   }
 
+  // Calcular valor total com valores do servidor
+  const totalAmount = serverItems.reduce((sum, item) => sum + item.serverAmount, 0);
+
+  // ── TEST MODE: bypass Stripe, grava direto no banco ──
+  if (process.env.PAYMENT_TEST_MODE === "true") {
+    const testSessionId = `test_${crypto.randomUUID()}`;
+    const finalItems = serverItems.map(({ serverAmount, ...rest }) => ({
+      ...rest,
+      amount: serverAmount,
+    }));
+
+    const { data: payment, error: payError } = await serviceClient
+      .from("payments")
+      .insert({
+        user_id: userId,
+        amount: Math.round(totalAmount * 100) / 100,
+        stripe_session_id: testSessionId,
+        status: "succeeded",
+        payment_method: "test",
+        completed_at: new Date().toISOString(),
+      })
+      .select("id")
+      .single();
+
+    if (payError || !payment) {
+      console.error("Erro test mode ao inserir pagamento:", payError);
+      return Response.json(
+        { error: "Erro ao registrar pagamento (test mode)" },
+        { status: 500 }
+      );
+    }
+
+    await criarPaymentItems(serviceClient, payment.id, finalItems);
+
+    // Se tem aviso, confirmar usuario
+    if (finalItems.some((i) => i.type === "aviso")) {
+      await serviceClient
+        .from("users")
+        .update({ status: "confirmed" })
+        .eq("id", userId);
+    }
+
+    return Response.json({ test_mode: true });
+  }
+
   // 3. Mapear items para line_items do Stripe (usando valor do SERVIDOR)
   const lineItems = serverItems.map((item) => ({
     price_data: {
@@ -194,15 +240,11 @@ export async function POST(request: Request) {
     quantity: 1,
   }));
 
-  // Calcular valor total com valores do servidor
-  const totalAmount = serverItems.reduce((sum, item) => sum + item.serverAmount, 0);
-
   try {
     // 4. Criar sessão de checkout no Stripe (Embedded mode)
     const session = await stripe.checkout.sessions.create({
-      ui_mode: "embedded",
+      ui_mode: "embedded_page",
       redirect_on_completion: "if_required",
-      automatic_payment_methods: { enabled: true },
       line_items: lineItems,
       mode: "payment",
       currency: "brl",

@@ -1,6 +1,7 @@
 import Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { createServiceClient } from "@/lib/supabase/server";
+import { criarPaymentItems } from "@/lib/payment-helpers";
 
 // IMPORTANTE: não usar request.json() — o Stripe precisa do corpo bruto para validar a assinatura
 export async function POST(request: Request) {
@@ -109,33 +110,4 @@ export async function POST(request: Request) {
   }
 
   return Response.json({ received: true });
-}
-
-// Função auxiliar para criar os payment_items
-async function criarPaymentItems(
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  supabase: any,
-  paymentId: string,
-  items: Array<{
-    type: "activity" | "bolao" | "expense_share" | "aviso";
-    id?: string;
-    description: string;
-    amount: number;
-  }>
-) {
-  const paymentItemsToInsert = items.map((item) => ({
-    payment_id: paymentId,
-    item_type: item.type,
-    item_id: item.id ?? null,
-    description: item.description,
-    amount: item.amount,
-  }));
-
-  const { error } = await supabase
-    .from("payment_items")
-    .insert(paymentItemsToInsert);
-
-  if (error) {
-    console.error("Erro ao criar payment_items:", error);
-  }
 }

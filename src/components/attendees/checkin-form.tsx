@@ -122,6 +122,7 @@ export function CheckinForm() {
   };
 
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [showManualForm, setShowManualForm] = useState(false);
 
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
@@ -274,145 +275,22 @@ export function CheckinForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="card space-y-5 animate-scale-in">
+    <div className="card space-y-5 animate-scale-in">
       <h2 className="text-xl font-bold text-blue text-center">
         Confirme sua presenca
       </h2>
 
-      {/* Avatar preview */}
-      <div className="flex justify-center">
-        {avatarUrl && !avatarError ? (
-          <img
-            src={avatarUrl}
-            alt="Avatar"
-            className="w-20 h-20 rounded-full object-cover border-2 border-green shadow-md"
-            onError={() => setAvatarError(true)}
-          />
-        ) : (
-          <div className="w-20 h-20 rounded-full bg-green/10 border-2 border-dashed border-green/30 flex items-center justify-center">
-            {name.trim() ? (
-              <span className="text-green font-bold text-xl">
-                {getInitials(name)}
-              </span>
-            ) : (
-              <svg
-                width="32"
-                height="32"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                className="text-green/40"
-              >
-                <circle cx="12" cy="8" r="5" />
-                <path d="M20 21a8 8 0 0 0-16 0" />
-              </svg>
-            )}
-          </div>
-        )}
-      </div>
-
-      {/* Nome */}
-      <div className="space-y-1.5">
-        <label htmlFor="name" className="block text-sm font-medium">
-          Nome <span className="text-red-500">*</span>
-        </label>
-        <input
-          id="name"
-          type="text"
-          required
-          placeholder="Seu nome completo"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full px-4 py-3 rounded-xl border border-foreground/15 bg-white focus:outline-none focus:ring-2 focus:ring-green/40 focus:border-green transition-colors input-focus"
-        />
-      </div>
-
-      {/* Instagram */}
-      <div className="space-y-1.5">
-        <label htmlFor="instagram" className="block text-sm font-medium">
-          @Instagram
-        </label>
-        <div className="relative">
-          <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/40">
-            @
-          </span>
-          <input
-            id="instagram"
-            type="text"
-            placeholder="seu_instagram"
-            value={instagram.replace(/^@/, "")}
-            onChange={(e) => handleInstagramChange(e.target.value)}
-            className="w-full pl-9 pr-4 py-3 rounded-xl border border-foreground/15 bg-white focus:outline-none focus:ring-2 focus:ring-green/40 focus:border-green transition-colors input-focus"
-          />
-        </div>
-      </div>
-
-      {/* Telefone */}
-      <div className="space-y-1.5">
-        <label htmlFor="phone" className="block text-sm font-medium">
-          Telefone
-        </label>
-        <input
-          id="phone"
-          type="tel"
-          placeholder="(11) 99999-9999"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          className="w-full px-4 py-3 rounded-xl border border-foreground/15 bg-white focus:outline-none focus:ring-2 focus:ring-green/40 focus:border-green transition-colors input-focus"
-        />
-      </div>
-
-      {/* CPF */}
-      <div className="space-y-1.5">
-        <label htmlFor="cpf" className="block text-sm font-medium">
-          CPF <span className="text-red-500">*</span>
-        </label>
-        <input
-          id="cpf"
-          type="text"
-          inputMode="numeric"
-          placeholder="000.000.000-00"
-          value={cpf}
-          onChange={(e) => {
-            setCpfError(null);
-            setCpf(maskCPF(e.target.value));
-          }}
-          maxLength={14}
-          className={`w-full px-4 py-3 rounded-xl border bg-white focus:outline-none focus:ring-2 focus:ring-green/40 focus:border-green transition-colors input-focus ${
-            cpfError ? "border-red-400 focus:ring-red-200" : "border-foreground/15"
-          }`}
-        />
-        {cpfError && (
-          <p className="text-xs text-red-500 flex items-center gap-1">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-            </svg>
-            {cpfError}
-          </p>
-        )}
-      </div>
-
-      {/* Divisor */}
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-foreground/10" />
-        </div>
-        <div className="relative flex justify-center text-xs">
-          <span className="bg-white px-3 text-foreground/40">ou</span>
-        </div>
-      </div>
-
+      {/* Google OAuth — destaque principal */}
       <button
         type="button"
         onClick={handleGoogleLogin}
         disabled={googleLoading}
-        className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-foreground/15 bg-white hover:bg-zinc-50 hover:shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+        className="w-full flex items-center justify-center gap-3 py-3.5 px-4 rounded-xl bg-white border-2 border-blue/30 hover:border-blue hover:shadow-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
       >
         {googleLoading ? (
           <div className="w-5 h-5 border-2 border-zinc-300 border-t-blue rounded-full animate-spin" />
         ) : (
-          <svg width="18" height="18" viewBox="0 0 24 24">
+          <svg width="20" height="20" viewBox="0 0 24 24">
             <path
               d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"
               fill="#4285F4"
@@ -431,26 +309,192 @@ export function CheckinForm() {
             />
           </svg>
         )}
-        <span className="text-sm font-medium text-zinc-700">
+        <span className="text-sm font-semibold text-zinc-700">
           {googleLoading ? "Redirecionando..." : "Entrar com Google"}
         </span>
       </button>
 
-      {/* Erro */}
-      {error && (
+      <p className="text-[11px] text-zinc-400 text-center -mt-2">
+        Recomendado — mais rapido e seguro
+      </p>
+
+      {/* Divisor */}
+      <div className="relative">
+        <div className="absolute inset-0 flex items-center">
+          <div className="w-full border-t border-foreground/10" />
+        </div>
+        <div className="relative flex justify-center text-xs">
+          <span className="bg-white px-3 text-foreground/40">ou</span>
+        </div>
+      </div>
+
+      {/* Botao para expandir cadastro manual */}
+      <button
+        type="button"
+        onClick={() => setShowManualForm(!showManualForm)}
+        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-foreground/10 bg-zinc-50 hover:bg-zinc-100 transition-all duration-200 text-sm text-zinc-600"
+      >
+        <span>Cadastro Manual</span>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`transition-transform duration-300 ${showManualForm ? "rotate-180" : ""}`}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      {/* Form manual colapsavel */}
+      <div
+        className={`overflow-hidden transition-all duration-300 ${
+          showManualForm ? "max-h-[800px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <form onSubmit={handleSubmit} className="space-y-5 pt-1">
+          {/* Avatar preview */}
+          <div className="flex justify-center">
+            {avatarUrl && !avatarError ? (
+              <img
+                src={avatarUrl}
+                alt="Avatar"
+                className="w-20 h-20 rounded-full object-cover border-2 border-green shadow-md"
+                onError={() => setAvatarError(true)}
+              />
+            ) : (
+              <div className="w-20 h-20 rounded-full bg-green/10 border-2 border-dashed border-green/30 flex items-center justify-center">
+                {name.trim() ? (
+                  <span className="text-green font-bold text-xl">
+                    {getInitials(name)}
+                  </span>
+                ) : (
+                  <svg
+                    width="32"
+                    height="32"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                    className="text-green/40"
+                  >
+                    <circle cx="12" cy="8" r="5" />
+                    <path d="M20 21a8 8 0 0 0-16 0" />
+                  </svg>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Nome */}
+          <div className="space-y-1.5">
+            <label htmlFor="name" className="block text-sm font-medium">
+              Nome <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="name"
+              type="text"
+              required
+              placeholder="Seu nome completo"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-foreground/15 bg-white focus:outline-none focus:ring-2 focus:ring-green/40 focus:border-green transition-colors input-focus"
+            />
+          </div>
+
+          {/* Instagram */}
+          <div className="space-y-1.5">
+            <label htmlFor="instagram" className="block text-sm font-medium">
+              @Instagram
+            </label>
+            <div className="relative">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-foreground/40">
+                @
+              </span>
+              <input
+                id="instagram"
+                type="text"
+                placeholder="seu_instagram"
+                value={instagram.replace(/^@/, "")}
+                onChange={(e) => handleInstagramChange(e.target.value)}
+                className="w-full pl-9 pr-4 py-3 rounded-xl border border-foreground/15 bg-white focus:outline-none focus:ring-2 focus:ring-green/40 focus:border-green transition-colors input-focus"
+              />
+            </div>
+          </div>
+
+          {/* Telefone */}
+          <div className="space-y-1.5">
+            <label htmlFor="phone" className="block text-sm font-medium">
+              Telefone
+            </label>
+            <input
+              id="phone"
+              type="tel"
+              placeholder="(11) 99999-9999"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full px-4 py-3 rounded-xl border border-foreground/15 bg-white focus:outline-none focus:ring-2 focus:ring-green/40 focus:border-green transition-colors input-focus"
+            />
+          </div>
+
+          {/* CPF */}
+          <div className="space-y-1.5">
+            <label htmlFor="cpf" className="block text-sm font-medium">
+              CPF <span className="text-red-500">*</span>
+            </label>
+            <input
+              id="cpf"
+              type="text"
+              inputMode="numeric"
+              placeholder="000.000.000-00"
+              value={cpf}
+              onChange={(e) => {
+                setCpfError(null);
+                setCpf(maskCPF(e.target.value));
+              }}
+              maxLength={14}
+              className={`w-full px-4 py-3 rounded-xl border bg-white focus:outline-none focus:ring-2 focus:ring-green/40 focus:border-green transition-colors input-focus ${
+                cpfError ? "border-red-400 focus:ring-red-200" : "border-foreground/15"
+              }`}
+            />
+            {cpfError && (
+              <p className="text-xs text-red-500 flex items-center gap-1">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
+                {cpfError}
+              </p>
+            )}
+          </div>
+
+          {/* Erro */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm text-center">
+              {error}
+            </div>
+          )}
+
+          {/* Botao de submit */}
+          <button
+            type="submit"
+            disabled={submitting}
+            className="btn-primary w-full text-center disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {submitting ? "Confirmando..." : "Confirmar Presenca"}
+          </button>
+        </form>
+      </div>
+
+      {/* Erro do Google (fora do form manual) */}
+      {error && !showManualForm && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-sm text-center">
           {error}
         </div>
       )}
-
-      {/* Botao de submit */}
-      <button
-        type="submit"
-        disabled={submitting}
-        className="btn-primary w-full text-center disabled:opacity-50 disabled:cursor-not-allowed"
-      >
-        {submitting ? "Confirmando..." : "Confirmar Presenca"}
-      </button>
-    </form>
+    </div>
   );
 }
