@@ -6,7 +6,7 @@ import { ScoreGrid } from "@/components/bolao/score-grid";
 import { TicketDialog } from "@/components/bolao/ticket-dialog";
 import { PhaseBar } from "@/components/layout/phase-bar";
 import { BolaoTicket } from "@/types";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, cn } from "@/lib/utils";
 import Link from "next/link";
 
 interface TicketWithUser extends BolaoTicket {
@@ -19,15 +19,19 @@ interface TicketWithUser extends BolaoTicket {
 
 interface BolaoData {
   tickets: TicketWithUser[];
+  pendingTickets: TicketWithUser[];
   scoreCounts: Record<string, number>;
   totalTickets: number;
+  totalPending: number;
 }
 
 export default function BolaoPage() {
   const [data, setData] = useState<BolaoData>({
     tickets: [],
+    pendingTickets: [],
     scoreCounts: {},
     totalTickets: 0,
+    totalPending: 0,
   });
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -60,9 +64,14 @@ export default function BolaoPage() {
   const totalPool = data.totalTickets * 2;
 
   // Tickets do usuario
-  const userTickets = userId
+  const userPaidTickets = userId
     ? data.tickets.filter((t) => t.user_id === userId)
     : [];
+  const userPendingTickets = userId
+    ? (data.pendingTickets || []).filter((t) => t.user_id === userId)
+    : [];
+  const userTickets = [...userPaidTickets, ...userPendingTickets];
+  const paidTicketIds = new Set(userPaidTickets.map((t) => t.id));
 
   function handleCellClick(homeScore: number, awayScore: number) {
     setSelectedCell({ home: homeScore, away: awayScore });
@@ -116,6 +125,16 @@ export default function BolaoPage() {
                 Tickets vendidos
               </p>
             </div>
+            {data.totalPending > 0 && (
+              <div className="text-center">
+                <p className="text-lg font-bold text-amber-400">
+                  {data.totalPending}
+                </p>
+                <p className="text-[10px] text-white/70 uppercase tracking-wide">
+                  Aguardando pgto
+                </p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -186,29 +205,40 @@ export default function BolaoPage() {
               Seus palpites
             </h2>
             <div className="flex flex-col gap-2">
-              {userTickets.map((ticket, index) => (
-                <div
-                  key={ticket.id}
-                  className={`card flex items-center justify-between py-3 animate-slide-up delay-${Math.min(index + 1, 8)}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-green/10 flex items-center justify-center">
-                      <span className="text-sm font-bold text-green">
-                        {ticket.home_score}x{ticket.away_score}
-                      </span>
-                    </div>
-                    <div>
-                      <p className="text-sm font-medium text-foreground">
-                        Brasil {ticket.home_score} x {ticket.away_score}{" "}
-                        Marrocos
-                      </p>
-                      <p className="text-[10px] text-zinc-400">
-                        Custo: {formatCurrency(ticket.cost)}
-                      </p>
+              {userTickets.map((ticket, index) => {
+                const isPaid = paidTicketIds.has(ticket.id);
+                return (
+                  <div
+                    key={ticket.id}
+                    className={`card flex items-center justify-between py-3 animate-slide-up delay-${Math.min(index + 1, 8)}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-green/10 flex items-center justify-center">
+                        <span className="text-sm font-bold text-green">
+                          {ticket.home_score}x{ticket.away_score}
+                        </span>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-foreground">
+                          Brasil {ticket.home_score} x {ticket.away_score}{" "}
+                          Marrocos
+                        </p>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          <p className="text-[10px] text-zinc-400">
+                            Custo: {formatCurrency(ticket.cost)}
+                          </p>
+                          <span className={cn(
+                            "text-[10px] px-2 py-0.5 rounded-full font-medium",
+                            isPaid ? "bg-green/10 text-green" : "bg-amber-100 text-amber-600"
+                          )}>
+                            {isPaid ? "Pago" : "Pendente"}
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

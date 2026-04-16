@@ -15,20 +15,19 @@ export function ScoreGrid({
 }: ScoreGridProps) {
   const scores = [0, 1, 2, 3, 4];
   const totalPool = totalTickets * 2;
+  const maxCount = Math.max(...Object.values(scoreCounts), 1);
 
   return (
     <div className="overflow-x-auto -mx-4 px-4">
       <table className="w-full border-collapse min-w-[340px] animate-fade-in">
         <thead>
           <tr>
-            {/* Canto superior esquerdo */}
             <th className="w-12 h-10" />
-            {/* Header: Brasil */}
             <th
               colSpan={5}
               className="text-center text-xs font-bold text-green pb-1"
             >
-              Brasil
+              🇧🇷 Brasil
             </th>
           </tr>
           <tr>
@@ -46,53 +45,60 @@ export function ScoreGrid({
         <tbody>
           {scores.map((away, rowIndex) => (
             <tr key={away}>
-              {/* Label lateral: Marrocos */}
               {rowIndex === 0 && (
                 <td
                   rowSpan={5}
                   className="w-12 align-middle text-center"
                 >
-                  <span className="text-xs font-bold text-red-600 writing-mode-vertical [writing-mode:vertical-lr] rotate-180 inline-block">
-                    Marrocos
+                  <span className="text-xs font-bold text-red-600 [writing-mode:vertical-lr] rotate-180 inline-block">
+                    🇲🇦 Marrocos
                   </span>
                 </td>
               )}
               {scores.map((home) => {
                 const key = `${home}x${away}`;
                 const count = scoreCounts[key] || 0;
-                const payout =
-                  count > 0 ? totalPool / count : 0;
+                const payout = count > 0 ? totalPool / count : 0;
+                const intensity = count / maxCount;
+
+                // Dynamic opacity: 0 tickets = zinc, 1+ = green gradient
+                const greenOpacity = count > 0 ? Math.round(8 + intensity * 17) : 0;
 
                 return (
                   <td key={key} className="p-0.5">
                     <button
                       onClick={() => onCellClick(home, away)}
                       className={cn(
-                        "w-full rounded-lg p-1.5 text-center transition-all hover:shadow-md hover:scale-105 active:scale-95 border",
+                        "relative w-full rounded-xl p-2 text-center transition-all hover:shadow-lg hover:scale-105 active:scale-95 border",
                         count > 0
-                          ? "bg-gradient-to-b from-green/5 to-green/10 border-green/25 hover:bg-green/10"
+                          ? `border-green/30 hover:border-green/50`
                           : "bg-zinc-50 border-zinc-100 hover:bg-zinc-100"
                       )}
+                      style={count > 0 ? { backgroundColor: `rgba(0, 156, 59, ${greenOpacity / 100})` } : undefined}
                     >
-                      <div className="text-xs font-bold text-foreground">
+                      {/* Badge de contagem */}
+                      {count > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-green text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 shadow-sm">
+                          {count}
+                        </span>
+                      )}
+
+                      <div className={cn(
+                        "text-sm font-bold",
+                        count > 0 ? "text-foreground" : "text-zinc-400"
+                      )}>
                         {home}x{away}
                       </div>
-                      <div
-                        className={cn(
-                          "text-[10px] mt-0.5",
-                          count > 0 ? "text-green font-medium" : "text-zinc-400"
-                        )}
-                      >
-                        {count > 0 ? `${count} ticket${count > 1 ? "s" : ""}` : "--"}
-                      </div>
-                      <div
-                        className={cn(
-                          "text-[9px] mt-0.5 font-semibold",
-                          count > 0 ? "text-amber-600 font-bold" : "text-transparent"
-                        )}
-                      >
-                        {count > 0 ? formatCurrency(payout) : "--"}
-                      </div>
+
+                      {count > 0 ? (
+                        <div className="text-[10px] mt-0.5 font-semibold text-amber-600">
+                          🏆 {formatCurrency(payout)}
+                        </div>
+                      ) : (
+                        <div className="text-[10px] mt-0.5 text-zinc-300">
+                          disponivel
+                        </div>
+                      )}
                     </button>
                   </td>
                 );
@@ -102,15 +108,19 @@ export function ScoreGrid({
         </tbody>
       </table>
 
-      {/* Legenda */}
-      <div className="flex items-center justify-center gap-4 mt-3 text-[10px] text-zinc-400">
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-green/30" />
-          Com palpites
+      {/* Legenda melhorada */}
+      <div className="flex items-center justify-center gap-4 mt-4 text-[10px] text-zinc-500">
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded bg-green/8 border border-green/20" />
+          Poucos
         </span>
-        <span className="flex items-center gap-1">
-          <span className="w-2 h-2 rounded-full bg-zinc-200" />
-          Sem palpites
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded bg-green/20 border border-green/30" />
+          Popular
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span className="w-3 h-3 rounded-full bg-green text-white text-[7px] flex items-center justify-center font-bold">3</span>
+          Tickets pagos
         </span>
       </div>
     </div>

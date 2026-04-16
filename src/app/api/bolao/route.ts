@@ -3,29 +3,46 @@ import { createClient } from "@/lib/supabase/server";
 export async function GET() {
   const supabase = await createClient();
 
-  const { data: tickets, error } = await supabase
-    .from("bolao_tickets")
-    .select("*, users(id, name, photo_url)")
-    .order("created_at", { ascending: false });
+  const [ticketsRes, paidItemsRes] = await Promise.all([
+    supabase
+      .from("bolao_tickets")
+      .select("*, users(id, name, photo_url)")
+      .order("created_at", { ascending: false }),
+    supabase
+      .from("payment_items")
+      .select("item_id, payments!inner(status)")
+      .eq("item_type", "bolao")
+      .eq("payments.status", "succeeded"),
+  ]);
 
-  if (error) {
+  if (ticketsRes.error) {
     return Response.json(
       { error: "Erro ao buscar palpites" },
       { status: 500 }
     );
   }
 
-  // Agregar contagem por combinacao de placar
+  const tickets = ticketsRes.data || [];
+  const paidTicketIds = new Set(
+    (paidItemsRes.data || []).map((pi: { item_id: string }) => pi.item_id)
+  );
+
+  const paidTickets = tickets.filter((t) => paidTicketIds.has(t.id));
+  const pendingTickets = tickets.filter((t) => !paidTicketIds.has(t.id));
+
+  // Agregar contagem por combinacao de placar (apenas pagos)
   const scoreCounts: Record<string, number> = {};
-  for (const ticket of tickets) {
+  for (const ticket of paidTickets) {
     const key = `${ticket.home_score}x${ticket.away_score}`;
     scoreCounts[key] = (scoreCounts[key] || 0) + 1;
   }
 
   return Response.json({
-    tickets,
+    tickets: paidTickets,
+    pendingTickets,
     scoreCounts,
-    totalTickets: tickets.length,
+    totalTickets: paidTickets.length,
+    totalPending: pendingTickets.length,
   });
 }
 

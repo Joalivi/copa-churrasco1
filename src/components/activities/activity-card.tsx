@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { Activity } from "@/types";
 import { PendingToast } from "@/components/layout/pending-toast";
 import { formatCurrency, calculateBottleCost, cn } from "@/lib/utils";
@@ -198,9 +199,11 @@ export function ActivityCard({
                   className="flex items-center gap-1.5 bg-zinc-50 rounded-full px-2.5 py-1"
                 >
                   {p.photo_url ? (
-                    <img
+                    <Image
                       src={p.photo_url}
                       alt={p.name}
+                      width={20}
+                      height={20}
                       className="w-5 h-5 rounded-full object-cover"
                     />
                   ) : (

@@ -130,9 +130,13 @@ export default function AtividadesPage() {
             ))}
 
             {optionalActivities.length === 0 && (
-              <div className="card text-center">
-                <p className="text-sm text-zinc-500">
+              <div className="card text-center py-10 space-y-2">
+                <span className="text-4xl block">🎯</span>
+                <p className="text-sm font-medium text-foreground/60">
                   Nenhuma atividade disponivel no momento.
+                </p>
+                <p className="text-xs text-zinc-400">
+                  Volte em breve para ver as atividades!
                 </p>
               </div>
             )}

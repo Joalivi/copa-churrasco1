@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import type { User } from "@/types";
 
 function getInitials(name: string): string {
@@ -24,9 +25,11 @@ export function AttendeeCard({ user }: AttendeeCardProps) {
     <div className="card flex flex-col items-center gap-2 py-4 px-3 hover:shadow-lg transition-all duration-200">
       {/* Avatar */}
       {user.photo_url && !imgError ? (
-        <img
+        <Image
           src={user.photo_url}
           alt={user.name}
+          width={64}
+          height={64}
           className="w-16 h-16 rounded-full object-cover border-2 border-green/30 ring-2 ring-green/10 ring-offset-1"
           onError={() => setImgError(true)}
         />
