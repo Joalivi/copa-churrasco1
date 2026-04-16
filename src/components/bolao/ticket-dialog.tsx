@@ -72,7 +72,7 @@ export function TicketDialog({
       />
 
       {/* Dialog */}
-      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md mx-auto p-6 shadow-xl animate-slide-up-modal">
+      <div className="relative bg-white rounded-t-2xl sm:rounded-2xl w-full max-w-md mx-auto p-6 pb-32 sm:pb-6 shadow-xl animate-slide-up-modal">
         {/* Close button */}
         <button
           onClick={onClose}
