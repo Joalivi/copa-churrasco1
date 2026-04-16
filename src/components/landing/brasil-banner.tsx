@@ -5,7 +5,7 @@ export default function BrasilBanner() {
     <section className="relative overflow-hidden rounded-2xl h-48 animate-slide-up delay-2">
       {/* Stadium background */}
       <Image
-        src="https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&q=80"
+        src="/fotos/estadio-futebol.jpeg"
         alt="Estadio de futebol"
         fill
         className="object-cover"
