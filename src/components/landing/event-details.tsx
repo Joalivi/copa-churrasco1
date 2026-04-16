@@ -37,23 +37,28 @@ function calcChopp(people: number) {
 }
 
 export default function EventDetails() {
-  const [confirmedCount, setConfirmedCount] = useState<number | null>(null);
+  const [churrascoCount, setChurrascoCount] = useState(0);
+  const [choppCount, setChoppCount] = useState(0);
 
   useEffect(() => {
-    fetch("/api/users")
+    fetch("/api/activities")
       .then((r) => (r.ok ? r.json() : null))
       .then((data) => {
         if (Array.isArray(data)) {
-          setConfirmedCount(data.length);
+          const churrasco = data.find((a: { name: string }) => a.name === "Churrasco");
+          const chopp = data.find((a: { name: string }) =>
+            a.name.toLowerCase().includes("chopp")
+          );
+          setChurrascoCount(churrasco?.checkin_count ?? 0);
+          setChoppCount(chopp?.checkin_count ?? churrasco?.checkin_count ?? 0);
         }
       })
       .catch(() => {});
   }, []);
 
-  const people = confirmedCount ?? 0;
-  const meatKg = people * 0.5;
+  const meatKg = churrascoCount * 0.5;
   const meatCost = meatKg * 40;
-  const chopp = calcChopp(people);
+  const chopp = calcChopp(choppCount);
 
   // Descricao dos barris
   const barrelParts: string[] = [];
@@ -120,7 +125,7 @@ export default function EventDetails() {
       </div>
 
       {/* Churrasco Card */}
-      {people > 0 && (
+      {churrascoCount > 0 && (
         <div className="card bg-gradient-to-r from-red-50 to-orange-50 border border-red-100 animate-slide-up delay-3">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-red-100 flex items-center justify-center shrink-0">
@@ -131,20 +136,30 @@ export default function EventDetails() {
                 Churrasco
               </h3>
               <p className="text-xs text-zinc-500 mt-0.5">
-                500g por pessoa &middot; R$40/kg
+                {churrascoCount} pessoas &middot; 500g por pessoa &middot; R$40/kg
               </p>
-              <div className="mt-2 grid grid-cols-2 gap-2">
+              <div className="mt-2 space-y-2">
                 <div className="bg-white/80 rounded-lg px-3 py-2">
-                  <p className="text-[10px] text-zinc-400 uppercase tracking-wide">Carne total</p>
-                  <p className="text-sm font-bold text-foreground">{meatKg.toFixed(1)}kg</p>
+                  <p className="text-[10px] text-zinc-400 uppercase tracking-wide">Total de carne</p>
+                  <p className="text-sm font-bold text-foreground">
+                    {meatKg.toFixed(1)}kg
+                    <span className="text-xs font-normal text-zinc-400 ml-1">
+                      ({churrascoCount} x 500g)
+                    </span>
+                  </p>
                 </div>
                 <div className="bg-white/80 rounded-lg px-3 py-2">
                   <p className="text-[10px] text-zinc-400 uppercase tracking-wide">Custo estimado</p>
-                  <p className="text-sm font-bold text-red-600">{formatCurrency(meatCost)}</p>
+                  <p className="text-sm font-bold text-red-600">
+                    {formatCurrency(meatCost)}
+                    <span className="text-xs font-normal text-zinc-400 ml-1">
+                      ({meatKg.toFixed(1)}kg x R$40)
+                    </span>
+                  </p>
                 </div>
               </div>
               <p className="text-[10px] text-zinc-400 mt-2">
-                &#128101; {people} confirmados &middot; {formatCurrency(meatCost / people)}/pessoa
+                &#128101; {churrascoCount} no churrasco &middot; Fechamento: {formatCurrency(meatCost / churrascoCount)}/pessoa
               </p>
             </div>
           </div>
@@ -152,7 +167,7 @@ export default function EventDetails() {
       )}
 
       {/* Chopp Card */}
-      {people > 0 && (
+      {choppCount > 0 && (
         <div className="card bg-gradient-to-r from-amber-50 to-yellow-50 border border-amber-100 animate-slide-up delay-4">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
@@ -163,22 +178,33 @@ export default function EventDetails() {
                 Chopp
               </h3>
               <p className="text-xs text-zinc-500 mt-0.5">
-                4L por pessoa &middot; barris de 30L ou 50L
+                {choppCount} pessoas &middot; 4L por pessoa &middot; barris de 30L ou 50L
               </p>
-              <div className="mt-2 grid grid-cols-2 gap-2">
+              <div className="mt-2 space-y-2">
                 <div className="bg-white/80 rounded-lg px-3 py-2">
-                  <p className="text-[10px] text-zinc-400 uppercase tracking-wide">Necessario</p>
-                  <p className="text-sm font-bold text-foreground">{people * 4}L</p>
+                  <p className="text-[10px] text-zinc-400 uppercase tracking-wide">Total necessario</p>
+                  <p className="text-sm font-bold text-foreground">
+                    {choppCount * 4}L
+                    <span className="text-xs font-normal text-zinc-400 ml-1">
+                      ({choppCount} x 4L)
+                    </span>
+                  </p>
                 </div>
                 <div className="bg-white/80 rounded-lg px-3 py-2">
                   <p className="text-[10px] text-zinc-400 uppercase tracking-wide">Barris</p>
-                  <p className="text-sm font-bold text-amber-600">{barrelText}</p>
+                  <p className="text-sm font-bold text-amber-600">
+                    {barrelText}
+                    <span className="text-xs font-normal text-zinc-400 ml-1">
+                      = {chopp.total}L
+                    </span>
+                  </p>
                 </div>
               </div>
               <p className="text-[10px] text-zinc-400 mt-2">
-                &#127866; {chopp.total}L total
+                &#127866; {chopp.total}L em barris
                 {chopp.waste > 0 && ` · ${chopp.waste}L de folga`}
                 {chopp.waste < 0 && ` · ${Math.abs(chopp.waste)}L abaixo (dentro da margem 20%)`}
+                {chopp.waste === 0 && ` · quantidade exata`}
               </p>
             </div>
           </div>
