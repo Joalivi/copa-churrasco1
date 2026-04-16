@@ -1,7 +1,11 @@
 "use client";
 
-import { Suspense, useEffect, useState, useCallback } from "react";
+import { Suspense, useEffect, useState, useCallback, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
+import {
+  EmbeddedCheckoutProvider,
+  EmbeddedCheckout,
+} from "@stripe/react-stripe-js";
 import { PageContainer } from "@/components/layout/page-container";
 import { useCurrentUser } from "@/hooks/use-current-user";
 import { formatCurrency } from "@/lib/utils";
@@ -9,6 +13,7 @@ import { PaymentHistory } from "@/components/pagamento/payment-history";
 import { PhaseBar } from "@/components/layout/phase-bar";
 import { invalidateBalanceCache } from "@/hooks/use-user-balance";
 import { createClient } from "@/lib/supabase/client";
+import { getStripe } from "@/lib/stripe-client";
 
 interface ItemSelecionavel {
   key: string;
@@ -85,6 +90,9 @@ function PagamentoContent() {
   const [selecionados, setSelecionados] = useState<Set<string>>(new Set());
   const [processando, setProcessando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [justPaidKeys, setJustPaidKeys] = useState<Set<string>>(new Set());
+  const [successBanner, setSuccessBanner] = useState<string | null>(null);
 
   // userId pode vir do hook ou da searchParam (fallback)
   const effectiveUserId = userId ?? searchParams.get("user_id");
@@ -231,7 +239,7 @@ function PagamentoContent() {
   const itensSelecionados = itensLiberados.filter((i) => selecionados.has(i.key));
   const totalSelecionado = itensSelecionados.reduce((sum, i) => sum + i.amount, 0);
 
-  const handlePagar = async (paymentMethod: "card" | "pix") => {
+  const handlePagar = async () => {
     if (!effectiveUserId || itensSelecionados.length === 0) return;
 
     setProcessando(true);
@@ -240,7 +248,6 @@ function PagamentoContent() {
     try {
       const payload = {
         userId: effectiveUserId,
-        paymentMethod,
         items: itensSelecionados.map((item) => ({
           type: item.type,
           id: item.id,
@@ -262,8 +269,8 @@ function PagamentoContent() {
         return;
       }
 
-      if (data.url) {
-        router.push(data.url);
+      if (data.client_secret) {
+        setClientSecret(data.client_secret);
       }
     } catch {
       setErro("Erro de conexão. Tente novamente.");
@@ -271,6 +278,33 @@ function PagamentoContent() {
       setProcessando(false);
     }
   };
+
+  const handleCheckoutComplete = useCallback(async () => {
+    // Guarda os keys dos itens que acabaram de ser pagos para destaque visual
+    const paidKeys = itensSelecionados.map((i) => i.key);
+    setJustPaidKeys(new Set(paidKeys));
+    setClientSecret(null);
+    setSelecionados(new Set());
+    setSuccessBanner(
+      `Pagamento confirmado! ${paidKeys.length} item(ns) quitado(s).`
+    );
+    invalidateBalanceCache();
+
+    // Refetch com pequeno polling caso o webhook ainda nao tenha registrado
+    if (effectiveUserId) {
+      for (let i = 0; i < 4; i++) {
+        await fetchData(effectiveUserId);
+        await new Promise((r) => setTimeout(r, 800));
+      }
+    }
+
+    // Remove o destaque depois de 6s
+    setTimeout(() => setJustPaidKeys(new Set()), 6000);
+    setTimeout(() => setSuccessBanner(null), 6000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [effectiveUserId, fetchData, itensSelecionados.map((i) => i.key).join(",")]);
+
+  const stripePromise = useMemo(() => getStripe(), []);
 
   // Estado: carregando
   if (loading || userLoading) {
@@ -358,6 +392,25 @@ function PagamentoContent() {
             Sair
           </button>
         </div>
+
+        {/* Banner de sucesso pós-pagamento */}
+        {successBanner && (
+          <div className="card bg-green/10 border border-green/30 animate-slide-up">
+            <div className="flex items-start gap-2">
+              <span className="text-lg shrink-0">✅</span>
+              <p className="text-sm font-semibold text-green flex-1">
+                {successBanner}
+              </p>
+              <button
+                onClick={() => setSuccessBanner(null)}
+                className="text-green/60 hover:text-green text-xs shrink-0"
+                aria-label="Fechar"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* Resumo de saldo */}
         <div className="grid grid-cols-2 gap-3">
@@ -560,23 +613,16 @@ function PagamentoContent() {
                   </p>
                 </div>
                 <button
-                  onClick={() => handlePagar("pix")}
+                  onClick={handlePagar}
                   disabled={processando || itensSelecionados.length === 0}
-                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-green text-white font-semibold text-sm hover:bg-green/90 shadow-md active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                  className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-green text-white font-semibold text-sm hover:bg-green/90 shadow-md active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                 >
-                  🏦 PIX
-                </button>
-                <button
-                  onClick={() => handlePagar("card")}
-                  disabled={processando || itensSelecionados.length === 0}
-                  className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-blue text-white font-semibold text-sm hover:bg-blue/90 shadow-md active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-                >
-                  💳 Cartão
+                  Pagar
                 </button>
               </div>
               {processando && (
                 <p className="text-xs text-zinc-500 text-center mt-2 animate-pulse">
-                  Redirecionando para pagamento...
+                  Iniciando pagamento...
                 </p>
               )}
             </div>
@@ -633,22 +679,66 @@ function PagamentoContent() {
             <div className="flex flex-col gap-2">
               {itens
                 .filter((i) => i.pago)
-                .map((item) => (
-                  <div
-                    key={item.key}
-                    className="card flex items-center gap-3 opacity-60 grayscale"
-                  >
-                    <span className="text-green text-sm">✓</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-foreground line-through">
-                        {item.description}
+                .map((item) => {
+                  const justPaid = justPaidKeys.has(item.key);
+                  return (
+                    <div
+                      key={item.key}
+                      className={`card flex items-center gap-3 transition-all ${
+                        justPaid
+                          ? "ring-2 ring-green bg-green/5 animate-pulse"
+                          : "opacity-60 grayscale"
+                      }`}
+                    >
+                      <span className="text-green text-sm">✓</span>
+                      <div className="flex-1 min-w-0">
+                        <p
+                          className={`text-sm text-foreground ${
+                            justPaid ? "font-semibold" : "line-through"
+                          }`}
+                        >
+                          {item.description}
+                          {justPaid && (
+                            <span className="ml-2 text-[10px] bg-green text-white px-1.5 py-0.5 rounded-full font-bold">
+                              PAGO AGORA
+                            </span>
+                          )}
+                        </p>
+                      </div>
+                      <p className="text-sm text-zinc-500 shrink-0">
+                        {formatCurrency(item.amount)}
                       </p>
                     </div>
-                    <p className="text-sm text-zinc-500 shrink-0">
-                      {formatCurrency(item.amount)}
-                    </p>
-                  </div>
-                ))}
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
+        {/* Embedded Checkout Modal (fullscreen mobile) */}
+        {clientSecret && (
+          <div className="fixed inset-0 z-50 bg-black/50 flex flex-col">
+            <div className="bg-white flex items-center justify-between px-4 py-3 border-b border-zinc-200">
+              <p className="text-sm font-semibold text-foreground">
+                Finalizar pagamento
+              </p>
+              <button
+                onClick={() => setClientSecret(null)}
+                className="text-zinc-500 hover:text-red-500 text-sm font-medium px-2 py-1 rounded-lg hover:bg-red-50"
+              >
+                Cancelar
+              </button>
+            </div>
+            <div className="flex-1 overflow-y-auto bg-white">
+              <EmbeddedCheckoutProvider
+                stripe={stripePromise}
+                options={{
+                  clientSecret,
+                  onComplete: handleCheckoutComplete,
+                }}
+              >
+                <EmbeddedCheckout />
+              </EmbeddedCheckoutProvider>
             </div>
           </div>
         )}

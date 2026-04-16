@@ -12,7 +12,6 @@ interface PaymentItemInput {
 interface CreateSessionBody {
   userId: string;
   items: PaymentItemInput[];
-  paymentMethod?: "card" | "pix";
 }
 
 /**
@@ -119,7 +118,7 @@ export async function POST(request: Request) {
     return Response.json({ error: "Corpo da requisição inválido" }, { status: 400 });
   }
 
-  const { userId, items, paymentMethod = "card" } = body;
+  const { userId, items } = body;
 
   if (!userId || !items || !Array.isArray(items) || items.length === 0) {
     return Response.json(
@@ -199,9 +198,11 @@ export async function POST(request: Request) {
   const totalAmount = serverItems.reduce((sum, item) => sum + item.serverAmount, 0);
 
   try {
-    // 4. Criar sessão de checkout no Stripe
+    // 4. Criar sessão de checkout no Stripe (Embedded mode)
     const session = await stripe.checkout.sessions.create({
-      payment_method_types: [paymentMethod],
+      ui_mode: "embedded",
+      redirect_on_completion: "if_required",
+      automatic_payment_methods: { enabled: true },
       line_items: lineItems,
       mode: "payment",
       currency: "brl",
@@ -214,8 +215,7 @@ export async function POST(request: Request) {
           }))
         ),
       },
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/pagamento/sucesso?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/pagamento/cancelado`,
+      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/pagamento/sucesso?session_id={CHECKOUT_SESSION_ID}`,
     });
 
     // 5. Criar registro de pagamento pendente no banco de dados
@@ -224,7 +224,7 @@ export async function POST(request: Request) {
       amount: Math.round(totalAmount * 100) / 100,
       stripe_session_id: session.id,
       status: "pending",
-      payment_method: paymentMethod,
+      payment_method: "auto",
     });
 
     if (insertError) {
@@ -232,8 +232,8 @@ export async function POST(request: Request) {
       // Não retornar erro — o webhook vai lidar com a confirmação
     }
 
-    // 6. Retornar a URL de checkout
-    return Response.json({ url: session.url });
+    // 6. Retornar o client_secret para o Embedded Checkout
+    return Response.json({ client_secret: session.client_secret });
   } catch (err) {
     console.error("Erro ao criar sessão Stripe:", err);
     return Response.json(
