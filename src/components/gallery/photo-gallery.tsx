@@ -11,33 +11,36 @@ interface Photo {
 
 const photos: Photo[] = [
   // Area Externa
-  { src: "/fotos/chacara-08.jpeg", alt: "Entrada do sitio", category: "Area Externa" },
+  { src: "/fotos/chacara-07.jpeg", alt: "Entrada do sitio", category: "Area Externa" },
+  { src: "/fotos/chacara-08.jpeg", alt: "Entrada com portao e palmeiras", category: "Area Externa" },
   { src: "/fotos/chacara-09.jpeg", alt: "Casa principal com palmeiras", category: "Area Externa" },
-  { src: "/fotos/chacara-11.jpeg", alt: "Jardim com montanhas", category: "Area Externa" },
-  { src: "/fotos/chacara-14.jpeg", alt: "Vista panoramica do jardim", category: "Area Externa" },
-  { src: "/fotos/chacara-15.jpeg", alt: "Area verde", category: "Area Externa" },
-  { src: "/fotos/chacara-16.jpeg", alt: "Jardim tropical", category: "Area Externa" },
-  { src: "/fotos/chacara-17.jpeg", alt: "Vista externa", category: "Area Externa" },
+  { src: "/fotos/chacara-10.jpeg", alt: "Casa principal vista do gramado", category: "Area Externa" },
+  { src: "/fotos/chacara-11.jpeg", alt: "Casinha decorativa no jardim", category: "Area Externa" },
+  { src: "/fotos/chacara-12.jpeg", alt: "Lago com fonte decorativa", category: "Area Externa" },
+  { src: "/fotos/chacara-17.jpeg", alt: "Jardim com palmeiras", category: "Area Externa" },
   // Piscina
   { src: "/fotos/chacara-13.jpeg", alt: "Piscina com gazebo", category: "Piscina" },
-  { src: "/fotos/chacara-10.jpeg", alt: "Area da piscina", category: "Piscina" },
-  { src: "/fotos/chacara-12.jpeg", alt: "Casinha decorativa no jardim", category: "Piscina" },
   // Area Gourmet
+  { src: "/fotos/chacara-14.jpeg", alt: "Cozinha caipira com fogao a lenha", category: "Area Gourmet" },
+  { src: "/fotos/chacara-15.jpeg", alt: "Varanda gourmet com mesa grande", category: "Area Gourmet" },
+  { src: "/fotos/chacara-16.jpeg", alt: "Varanda com deck de madeira", category: "Area Gourmet" },
   { src: "/fotos/chacara-21.jpeg", alt: "Churrasqueira e fogao a lenha", category: "Area Gourmet" },
-  { src: "/fotos/chacara-18.jpeg", alt: "Area gourmet", category: "Area Gourmet" },
-  { src: "/fotos/chacara-19.jpeg", alt: "Espaco gourmet", category: "Area Gourmet" },
-  { src: "/fotos/chacara-20.jpeg", alt: "Cozinha externa", category: "Area Gourmet" },
-  // Interior
-  { src: "/fotos/chacara-01.jpeg", alt: "Sala de estar", category: "Interior" },
-  { src: "/fotos/chacara-02.jpeg", alt: "Sala com TV", category: "Interior" },
-  { src: "/fotos/chacara-03.jpeg", alt: "Sala ampla", category: "Interior" },
-  { src: "/fotos/chacara-04.jpeg", alt: "Sala de estar vista 2", category: "Interior" },
-  { src: "/fotos/chacara-05.jpeg", alt: "Quarto", category: "Interior" },
-  { src: "/fotos/chacara-06.jpeg", alt: "Quarto 2", category: "Interior" },
-  { src: "/fotos/chacara-07.jpeg", alt: "Quarto 3", category: "Interior" },
+  // Sala
+  { src: "/fotos/chacara-01.jpeg", alt: "Sala de estar com sofa", category: "Sala" },
+  { src: "/fotos/chacara-02.jpeg", alt: "Sala com TV 55 polegadas", category: "Sala" },
+  { src: "/fotos/chacara-04.jpeg", alt: "Sala de estar", category: "Sala" },
+  // Quartos
+  { src: "/fotos/chacara-03.jpeg", alt: "Quarto casal com duas camas", category: "Quartos" },
+  { src: "/fotos/chacara-05.jpeg", alt: "Quarto casal", category: "Quartos" },
+  { src: "/fotos/chacara-06.jpeg", alt: "Quarto solteiro com TV", category: "Quartos" },
+  // Varanda
+  { src: "/fotos/chacara-18.jpeg", alt: "Varanda superior com vista", category: "Varanda" },
+  { src: "/fotos/chacara-20.jpeg", alt: "Corredor com rede de descanso", category: "Varanda" },
+  // Banheiro
+  { src: "/fotos/chacara-19.jpeg", alt: "Banheiro com box e pia", category: "Banheiro" },
 ];
 
-const categories = ["Todas", "Area Externa", "Piscina", "Area Gourmet", "Interior"];
+const categories = ["Todas", "Area Externa", "Piscina", "Area Gourmet", "Sala", "Quartos", "Varanda", "Banheiro"];
 
 export function PhotoGallery() {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
@@ -98,12 +101,12 @@ export function PhotoGallery() {
   return (
     <>
       {/* Category filter */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+      <div className="flex flex-wrap gap-2 pb-2">
         {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => { setActiveCategory(cat); setSelectedIdx(null); }}
-            className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${
+            className={`px-3 py-1 rounded-full text-xs font-semibold transition-all ${
               activeCategory === cat
                 ? "bg-green text-white shadow-md"
                 : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
