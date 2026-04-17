@@ -188,8 +188,9 @@ export async function POST(request: Request) {
   // Calcular valor total com valores do servidor
   const totalAmount = serverItems.reduce((sum, item) => sum + item.serverAmount, 0);
 
-  // ── TEST MODE: bypass Stripe, grava direto no banco ──
-  if (process.env.PAYMENT_TEST_MODE === "true") {
+  // ── TESTE: bypass Stripe, grava direto no banco ──
+  // TODO: remover este bloco e o return abaixo para reabilitar Stripe em producao
+  {
     const testSessionId = `test_${crypto.randomUUID()}`;
     const finalItems = serverItems.map(({ serverAmount, ...rest }) => ({
       ...rest,
@@ -230,6 +231,8 @@ export async function POST(request: Request) {
     return Response.json({ test_mode: true });
   }
 
+  // ── STRIPE (desabilitado para teste — codigo abaixo é unreachable) ──
+  // Para reabilitar: remover o bloco de bypass acima (entre os comentarios TODO)
   // 3. Mapear items para line_items do Stripe (usando valor do SERVIDOR)
   const lineItems = serverItems.map((item) => ({
     price_data: {

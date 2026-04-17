@@ -93,7 +93,6 @@ function PagamentoContent() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [justPaidKeys, setJustPaidKeys] = useState<Set<string>>(new Set());
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
-  const [isTestMode, setIsTestMode] = useState(false);
 
   // userId pode vir do hook ou da searchParam (fallback)
   const effectiveUserId = userId ?? searchParams.get("user_id");
@@ -126,14 +125,6 @@ function PagamentoContent() {
       setLoading(false);
     }
   }, [userLoading, effectiveUserId, fetchData]);
-
-  // Detectar test mode
-  useEffect(() => {
-    fetch("/api/test-mode")
-      .then((r) => r.json())
-      .then((d) => setIsTestMode(d.test === true))
-      .catch(() => {});
-  }, []);
 
   // Construir lista de itens a pagar
   const itensPagarDisponiveis = useCallback((): ItemSelecionavel[] => {
@@ -305,12 +296,9 @@ function PagamentoContent() {
     );
     invalidateBalanceCache();
 
-    // Refetch com pequeno polling caso o webhook ainda nao tenha registrado
+    // Refetch para atualizar a lista de itens pagos
     if (effectiveUserId) {
-      for (let i = 0; i < 4; i++) {
-        await fetchData(effectiveUserId);
-        await new Promise((r) => setTimeout(r, 800));
-      }
+      await fetchData(effectiveUserId);
     }
 
     // Remove o destaque depois de 6s
@@ -407,15 +395,6 @@ function PagamentoContent() {
             Sair
           </button>
         </div>
-
-        {/* Badge modo teste */}
-        {isTestMode && (
-          <div className="bg-amber-50 border border-amber-300 rounded-xl px-3 py-2">
-            <p className="text-xs font-semibold text-amber-800 text-center">
-              MODO TESTE — pagamentos simulados, nada é cobrado
-            </p>
-          </div>
-        )}
 
         {/* Banner de sucesso pós-pagamento */}
         {successBanner && (
