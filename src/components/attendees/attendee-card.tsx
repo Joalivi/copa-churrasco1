@@ -44,6 +44,17 @@ export function AttendeeCard({ user }: AttendeeCardProps) {
         {user.name}
       </p>
 
+      {/* Status badge */}
+      <span
+        className={
+          user.status === "confirmed"
+            ? "text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-green/15 text-green"
+            : "text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-yellow/15 text-yellow"
+        }
+      >
+        {user.status === "confirmed" ? "Confirmado" : "Pendente"}
+      </span>
+
       {/* Instagram */}
       {user.instagram && (
         <a
