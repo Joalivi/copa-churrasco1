@@ -225,6 +225,29 @@ export default function FinanceiroPage() {
                 );
               })}
 
+              {/* Despesa pendente de fechamento */}
+              <div className="card flex items-center gap-3 py-3 opacity-60 border border-dashed border-zinc-300">
+                <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center shrink-0 text-lg">
+                  🧻
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <p className="text-sm font-medium text-zinc-500">
+                      Itens Basicos
+                    </p>
+                    <span className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full bg-zinc-100 text-zinc-500">
+                      Pendente
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-400 mt-0.5">
+                    Papel higienico, detergente, papel toalha, descartaveis — valor aprox. R$6 por pessoa
+                  </p>
+                </div>
+                <p className="text-sm font-bold text-zinc-400 shrink-0">
+                  —
+                </p>
+              </div>
+
               {/* Linha de total */}
               {stats && expenses.length > 0 && (
                 <div className="card flex items-center justify-between border border-blue/10 mt-1">
