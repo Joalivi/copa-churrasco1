@@ -150,33 +150,13 @@ export default function FinanceiroPage() {
               )}
             </div>
 
-            {/* Saldo Pendente */}
-            <div className="card bg-amber-50 border border-amber-100 animate-slide-up delay-3">
-              <p className="text-[10px] uppercase tracking-wide text-zinc-500 font-medium">
-                Saldo Pendente
-              </p>
-              <p className="text-lg font-bold text-amber-600 mt-1">
-                {formatCurrency(
-                  stats ? Math.max(0, stats.pendingBalance) : 0
-                )}
-              </p>
-              {stats && stats.pendingBalance <= 0 && (
-                <p className="text-[10px] text-green mt-0.5 font-medium">
-                  Zerado ✓
-                </p>
-              )}
-            </div>
-
             {/* Por Pessoa (est.) */}
-            <div className="card bg-zinc-50 border border-zinc-100 animate-slide-up delay-4">
+            <div className="card bg-zinc-50 border border-zinc-100 animate-slide-up delay-3">
               <p className="text-[10px] uppercase tracking-wide text-zinc-500 font-medium">
                 Por Pessoa (est.)
               </p>
               <p className="text-lg font-bold text-foreground mt-1">
                 {formatCurrency(stats?.perCapita ?? 0)}
-              </p>
-              <p className="text-[10px] text-zinc-400 mt-0.5">
-                média por confirmado
               </p>
             </div>
           </div>
