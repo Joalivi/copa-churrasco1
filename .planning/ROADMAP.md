@@ -29,11 +29,11 @@ Decimal phases appear between their surrounding integers in numeric order.
   2. Webhook Stripe processa eventos de forma idempotente (reprocessar mesmo evento nao duplica dados)
   3. Telas de atividades mostram empty state quando nao ha dados (nao tela em branco)
   4. Imagem do attendee-card usa next/image em vez de img tag
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 01-01: TBD
-- [ ] 01-02: TBD
+- [ ] 01-01-PLAN.md — Centralizar constantes (TOTAL_RENTAL, AVISO_PRICE) nas 4 rotas de API
+- [ ] 01-02-PLAN.md — Adicionar idempotency check no webhook Stripe
 
 ### Phase 2: Payment Core
 **Goal**: Usuarios conseguem pagar de verdade via Stripe com escolha entre Pix e Cartao
@@ -104,7 +104,7 @@ Note: Phase 4 and Phase 5 depend only on Phase 1 and could theoretically run in 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|---------------|--------|-----------|
-| 1. Technical Foundation | 0/? | Not started | - |
+| 1. Technical Foundation | 0/2 | Planned | - |
 | 2. Payment Core | 0/? | Not started | - |
 | 3. Payment Correctness | 0/? | Not started | - |
 | 4. Financeiro | 0/? | Not started | - |
