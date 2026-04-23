@@ -420,8 +420,12 @@ function PagamentoContent() {
             </p>
             <p className="text-lg font-bold text-blue mt-1">
               {formatCurrency(
-                summary.total_owed -
-                  itensBloqueados.reduce((sum, i) => sum + i.amount, 0)
+                Math.max(
+                  0,
+                  summary.total_owed -
+                    summary.total_paid -
+                    itensBloqueados.reduce((sum, i) => sum + i.amount, 0)
+                )
               )}
             </p>
           </div>

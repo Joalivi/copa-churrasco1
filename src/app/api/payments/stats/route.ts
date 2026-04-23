@@ -37,20 +37,10 @@ export async function GET() {
   // Despesas totais (todas, incluindo aluguel)
   const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
 
-  // Total arrecadado (soma de pagamentos succeeded, excluindo aviso)
+  // Total arrecadado (soma de todos os pagamentos succeeded, incluindo aviso)
   let totalCollected = 0;
   for (const payment of allPayments) {
-    const items = (payment.payment_items || []) as Array<{
-      item_type: string;
-      amount: number;
-    }>;
-    if (items.length === 0) {
-      totalCollected += payment.amount;
-    } else {
-      totalCollected += items
-        .filter((item) => item.item_type !== "aviso")
-        .reduce((s, item) => s + item.amount, 0);
-    }
+    totalCollected += payment.amount;
   }
 
   // Calcular total que cada pessoa deve (para saldo pendente)

@@ -110,31 +110,21 @@ export default function BolaoPage() {
           {/* Stats */}
           <div className="flex justify-around mt-4 pt-3 border-t border-white/20">
             <div className="text-center">
-              <p className="text-lg font-bold text-yellow glow-yellow">
+              <p className="text-lg font-bold text-yellow">
                 {formatCurrency(totalPool)}
               </p>
-              <p className="text-[10px] text-white/70 uppercase tracking-wide">
-                Premio total
+              <p className="text-xs text-white/70 uppercase tracking-wide">
+                Total arrecadado
               </p>
             </div>
             <div className="text-center">
-              <p className="text-lg font-bold text-yellow glow-yellow">
+              <p className="text-lg font-bold text-yellow">
                 {data.totalTickets}
               </p>
-              <p className="text-[10px] text-white/70 uppercase tracking-wide">
-                Tickets vendidos
+              <p className="text-xs text-white/70 uppercase tracking-wide">
+                Total de tickets
               </p>
             </div>
-            {data.totalPending > 0 && (
-              <div className="text-center">
-                <p className="text-lg font-bold text-amber-400">
-                  {data.totalPending}
-                </p>
-                <p className="text-[10px] text-white/70 uppercase tracking-wide">
-                  Aguardando pgto
-                </p>
-              </div>
-            )}
           </div>
         </div>
 

@@ -38,6 +38,11 @@ const photos: Photo[] = [
   { src: "/fotos/chacara-20.jpeg", alt: "Corredor com rede de descanso", category: "Varanda" },
   // Banheiro
   { src: "/fotos/chacara-19.jpeg", alt: "Banheiro com box e pia", category: "Banheiro" },
+  // Area Gourmet (novas)
+  { src: "/fotos/chacara-22.jpeg", alt: "Salao com churrasqueira e fogao a lenha", category: "Area Gourmet" },
+  { src: "/fotos/chacara-23.jpeg", alt: "Salao com mesa de sinuca", category: "Area Gourmet" },
+  // Area Externa (nova)
+  { src: "/fotos/chacara-24.jpeg", alt: "Jardim com vista para as montanhas", category: "Area Externa" },
 ];
 
 const categories = ["Todas", "Area Externa", "Piscina", "Area Gourmet", "Sala", "Quartos", "Varanda", "Banheiro"];
