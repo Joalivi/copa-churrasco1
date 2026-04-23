@@ -1,0 +1,17 @@
+{
+  "project_name": "copa-churrasco",
+  "created": "2026-04-22",
+  "workflow": {
+    "research": true,
+    "discuss_mode": "discuss",
+    "auto_advance": false,
+    "pattern_mapper": false,
+    "plan_bounce": false,
+    "security_enforcement": false,
+    "ui_phase": false,
+    "ui_safety_gate": false
+  },
+  "models": {},
+  "context_window": 200000,
+  "commit_docs": true
+}

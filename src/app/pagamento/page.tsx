@@ -93,6 +93,7 @@ function PagamentoContent() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [justPaidKeys, setJustPaidKeys] = useState<Set<string>>(new Set());
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
+  const [paymentMethod, setPaymentMethod] = useState<"card" | "pix" | null>(null);
 
   // userId pode vir do hook ou da searchParam (fallback)
   const effectiveUserId = userId ?? searchParams.get("user_id");
@@ -239,15 +240,17 @@ function PagamentoContent() {
   const itensSelecionados = itensLiberados.filter((i) => selecionados.has(i.key));
   const totalSelecionado = itensSelecionados.reduce((sum, i) => sum + i.amount, 0);
 
-  const handlePagar = async () => {
+  const handlePagar = async (method: "card" | "pix") => {
     if (!effectiveUserId || itensSelecionados.length === 0) return;
 
     setProcessando(true);
     setErro(null);
+    setPaymentMethod(method);
 
     try {
       const payload = {
         userId: effectiveUserId,
+        paymentMethod: method,
         items: itensSelecionados.map((item) => ({
           type: item.type,
           id: item.id,
@@ -266,12 +269,6 @@ function PagamentoContent() {
 
       if (!res.ok) {
         setErro(data.error ?? "Erro ao iniciar pagamento");
-        return;
-      }
-
-      if (data.test_mode) {
-        // Test mode: pagamento ja registrado no banco, pular Stripe
-        await handleCheckoutComplete();
         return;
       }
 
@@ -418,15 +415,18 @@ function PagamentoContent() {
         {/* Resumo de saldo */}
         <div className="grid grid-cols-2 gap-3">
           <div className="card bg-blue/5 border border-blue/10">
-            <p className="text-[10px] uppercase tracking-wide text-zinc-500 font-medium">
+            <p className="text-xs uppercase tracking-wide text-zinc-500 font-medium">
               Total a pagar
             </p>
             <p className="text-lg font-bold text-blue mt-1">
-              {formatCurrency(summary.total_owed)}
+              {formatCurrency(
+                summary.total_owed -
+                  itensBloqueados.reduce((sum, i) => sum + i.amount, 0)
+              )}
             </p>
           </div>
           <div className="card bg-green/5 border border-green/10">
-            <p className="text-[10px] uppercase tracking-wide text-zinc-500 font-medium">
+            <p className="text-xs uppercase tracking-wide text-zinc-500 font-medium">
               Já pago
             </p>
             <p className="text-lg font-bold text-green mt-1">
@@ -490,7 +490,7 @@ function PagamentoContent() {
                               <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
                                 {item.description}
                                 {item.type === "aviso" && (
-                                  <span className="text-[10px] bg-yellow/20 text-yellow-700 px-1.5 py-0.5 rounded-full font-medium">
+                                  <span className="text-xs bg-yellow/20 text-yellow-700 px-1.5 py-0.5 rounded-full font-medium">
                                     obrigatório
                                   </span>
                                 )}
@@ -502,7 +502,7 @@ function PagamentoContent() {
                             <p className="text-sm font-bold text-foreground shrink-0">
                               {formatCurrency(item.amount)}
                               {eventoAberto && item.isDynamic && (
-                                <span className="text-[10px] text-zinc-400 ml-1 font-normal">(est.)</span>
+                                <span className="text-xs text-zinc-400 ml-1 font-normal">(est.)</span>
                               )}
                             </p>
                           </label>
@@ -544,7 +544,7 @@ function PagamentoContent() {
                             <p className="text-sm font-bold text-foreground shrink-0">
                               {formatCurrency(item.amount)}
                               {eventoAberto && item.isDynamic && (
-                                <span className="text-[10px] text-zinc-400 ml-1 font-normal">(est.)</span>
+                                <span className="text-xs text-zinc-400 ml-1 font-normal">(est.)</span>
                               )}
                             </p>
                           </label>
@@ -615,13 +615,23 @@ function PagamentoContent() {
                     {formatCurrency(totalSelecionado)}
                   </p>
                 </div>
-                <button
-                  onClick={handlePagar}
-                  disabled={processando || itensSelecionados.length === 0}
-                  className="flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-green text-white font-semibold text-sm hover:bg-green/90 shadow-md active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
-                >
-                  Pagar
-                </button>
+                <div className="flex gap-2 shrink-0">
+                  <button
+                    onClick={() => handlePagar("card")}
+                    disabled={processando || itensSelecionados.length === 0}
+                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-green text-white font-semibold text-sm hover:bg-green/90 shadow-md active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <span aria-hidden="true">&#128179;</span>
+                    Cartão
+                  </button>
+                  <button
+                    onClick={() => handlePagar("pix")}
+                    disabled={processando || itensSelecionados.length === 0}
+                    className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-[#32BCAD] text-white font-semibold text-sm hover:bg-[#2aa89b] shadow-md active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Pix
+                  </button>
+                </div>
               </div>
               {processando && (
                 <p className="text-xs text-zinc-500 text-center mt-2 animate-pulse">
@@ -702,7 +712,7 @@ function PagamentoContent() {
                         >
                           {item.description}
                           {justPaid && (
-                            <span className="ml-2 text-[10px] bg-green text-white px-1.5 py-0.5 rounded-full font-bold">
+                            <span className="ml-2 text-xs bg-green text-white px-1.5 py-0.5 rounded-full font-bold">
                               PAGO AGORA
                             </span>
                           )}

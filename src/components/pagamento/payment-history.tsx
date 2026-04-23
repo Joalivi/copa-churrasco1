@@ -60,21 +60,21 @@ export function PaymentHistory({ payments }: PaymentHistoryProps) {
                   {formatCurrency(payment.amount)}
                 </p>
                 <span
-                  className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${methodBadgeClass(
+                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${methodBadgeClass(
                     payment.payment_method
                   )}`}
                 >
                   {methodLabel(payment.payment_method)}
                 </span>
                 <span
-                  className={`text-[10px] font-medium px-2 py-0.5 rounded-full ${statusBadgeClass(
+                  className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusBadgeClass(
                     payment.status
                   )}`}
                 >
                   {statusLabel(payment.status)}
                 </span>
               </div>
-              <p className="text-[11px] text-zinc-400 mt-0.5">
+              <p className="text-xs text-zinc-400 mt-0.5">
                 {formatDate(payment.created_at)}
               </p>
             </div>

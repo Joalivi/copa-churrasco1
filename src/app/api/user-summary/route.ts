@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { NextRequest } from "next/server";
 import { calculateBottleCost } from "@/lib/utils";
+import { TOTAL_RENTAL, AVISO_PRICE } from "@/lib/constants";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -141,7 +142,7 @@ export async function GET(request: NextRequest) {
 
   // Rateio do aluguel
   const rentalShare =
-    confirmedCount > 0 ? 1650 / confirmedCount - 35 : 0;
+    confirmedCount > 0 ? TOTAL_RENTAL / confirmedCount - AVISO_PRICE : 0;
 
   // Total que deve
   const totalOwed =

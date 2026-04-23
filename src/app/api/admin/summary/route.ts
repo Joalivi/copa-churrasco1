@@ -1,8 +1,6 @@
 import { createServiceClient } from "@/lib/supabase/server";
 import { calculateBottleCost } from "@/lib/utils";
-
-const TOTAL_RENTAL = 1650;
-const AVISO = 35;
+import { TOTAL_RENTAL, AVISO_PRICE } from "@/lib/constants";
 
 export async function GET(request: Request) {
   const pin = request.headers.get("x-admin-pin");
@@ -57,7 +55,7 @@ export async function GET(request: Request) {
   const expenseShare = confirmedCount > 0 ? totalSplitExpenses / confirmedCount : 0;
 
   // Rateio do aluguel (mesmo calculo do user-summary)
-  const rentalShare = confirmedCount > 0 ? TOTAL_RENTAL / confirmedCount - AVISO : 0;
+  const rentalShare = confirmedCount > 0 ? TOTAL_RENTAL / confirmedCount - AVISO_PRICE : 0;
 
   // Contagem de checkins por atividade
   const checkinCountByActivity: Record<string, number> = {};

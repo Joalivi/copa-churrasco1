@@ -63,33 +63,55 @@ export async function POST(request: Request) {
 
     if (updateError || !payment) {
       console.error("Erro ao atualizar pagamento:", updateError);
-      // Tentar criar o registro caso não exista (fallback)
-      const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
-      const { data: inserted, error: insertError } = await supabase
+
+      // IDEMPOTENCY: Verificar se esta sessão já foi processada (D-04)
+      const { data: existingPayment } = await supabase
         .from("payments")
-        .insert({
-          user_id: userId,
-          amount: Math.round(totalAmount * 100) / 100,
-          stripe_session_id: session.id,
-          stripe_payment_intent_id: session.payment_intent as string | null,
-          status: "succeeded",
-          payment_method: "card",
-          completed_at: new Date().toISOString(),
-        })
         .select("id")
-        .single();
+        .eq("stripe_session_id", session.id)
+        .maybeSingle();
 
-      if (insertError || !inserted) {
-        console.error("Erro crítico ao inserir pagamento:", insertError);
-        return Response.json(
-          { error: "Erro ao processar pagamento" },
-          { status: 500 }
-        );
+      if (existingPayment) {
+        // Pagamento já existe — verificar se payment_items também existem
+        const { count: itemCount } = await supabase
+          .from("payment_items")
+          .select("id", { count: "exact", head: true })
+          .eq("payment_id", existingPayment.id);
+
+        if ((itemCount ?? 0) > 0) {
+          // Totalmente processado — retornar sucesso sem duplicar
+          return Response.json({ received: true });
+        }
+
+        // Payment existe mas items faltando — criar somente items
+        await criarPaymentItems(supabase, existingPayment.id, items);
+      } else {
+        // Genuinamente novo — inserir fallback
+        const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
+        const { data: inserted, error: insertError } = await supabase
+          .from("payments")
+          .insert({
+            user_id: userId,
+            amount: Math.round(totalAmount * 100) / 100,
+            stripe_session_id: session.id,
+            stripe_payment_intent_id: session.payment_intent as string | null,
+            status: "succeeded",
+            payment_method: "card",
+            completed_at: new Date().toISOString(),
+          })
+          .select("id")
+          .single();
+
+        if (insertError || !inserted) {
+          console.error("Erro crítico ao inserir pagamento:", insertError);
+          return Response.json(
+            { error: "Erro ao processar pagamento" },
+            { status: 500 }
+          );
+        }
+
+        await criarPaymentItems(supabase, inserted.id, items);
       }
-
-      // Usar o id inserido
-      const paymentId = inserted.id;
-      await criarPaymentItems(supabase, paymentId, items);
     } else {
       // Criar registros de payment_items
       await criarPaymentItems(supabase, payment.id, items);

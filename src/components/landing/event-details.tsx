@@ -1,5 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
+import { TOTAL_RENTAL } from "@/lib/constants";
+import { formatCurrency } from "@/lib/utils";
 
 export default function EventDetails() {
 
@@ -127,11 +129,42 @@ export default function EventDetails() {
             </h3>
             <p className="text-sm text-zinc-600 mt-1">
               <span className="font-bold text-green text-base">
-                R$ 1.650,00
+                {formatCurrency(TOTAL_RENTAL)}
               </span>{" "}
               dividido entre todos os confirmados
             </p>
           </div>
+        </div>
+      </div>
+
+      {/* Google Maps */}
+      <div className="card animate-slide-up delay-8 overflow-hidden">
+        <div className="flex items-start gap-3 mb-3">
+          <div className="w-10 h-10 rounded-xl bg-green/10 flex items-center justify-center shrink-0">
+            <span className="text-2xl" aria-hidden="true">
+              &#128506;
+            </span>
+          </div>
+          <div>
+            <h3 className="font-bold text-base text-foreground">
+              Como Chegar
+            </h3>
+            <p className="text-sm text-zinc-500 mt-1">
+              Sitio Sao Jose, Laranjeiras de Caldas
+            </p>
+          </div>
+        </div>
+        <div className="rounded-xl overflow-hidden -mx-4 -mb-4">
+          <iframe
+            src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3702.729263606041!2d-46.4335778239139!3d-21.86797627999981!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x94c9ed089060fe95%3A0xc20c96607c87a7e6!2sS%C3%ADtio%20S%C3%A3o%20Jos%C3%A9%20Laranjeiras%20de%20Caldas!5e0!3m2!1spt-BR!2sbr!4v1776905415151!5m2!1spt-BR!2sbr"
+            width="100%"
+            height="250"
+            style={{ border: 0 }}
+            allowFullScreen
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            title="Mapa do Sitio Sao Jose"
+          />
         </div>
       </div>
     </section>
