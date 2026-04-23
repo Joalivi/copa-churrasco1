@@ -25,7 +25,7 @@ function adminHeaders(): HeadersInit {
 
 // ── Types ────────────────────────────────────────────────
 
-type Tab = "despesas" | "resumo" | "atividades";
+type Tab = "despesas" | "resumo" | "atividades" | "pix";
 
 interface UserSummary {
   id: string;
@@ -782,6 +782,204 @@ function AtividadesTab() {
   );
 }
 
+// ── Tab: Pix Pendentes ───────────────────────────────────
+
+interface PixPayment {
+  id: string;
+  user_id: string;
+  amount: number;
+  status: string;
+  payment_method: string;
+  pix_txid: string | null;
+  created_at: string;
+  completed_at: string | null;
+  users: { id: string; name: string; photo_url: string | null } | null;
+  payment_items: Array<{
+    id: string;
+    item_type: string;
+    description: string;
+    amount: number;
+  }>;
+}
+
+function PixTab() {
+  const [payments, setPayments] = useState<PixPayment[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [showConfirm, setShowConfirm] = useState<PixPayment | null>(null);
+
+  const fetchPayments = useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/payments", { headers: adminHeaders() });
+      if (res.ok) {
+        const data = await res.json();
+        setPayments(data);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPayments();
+  }, [fetchPayments]);
+
+  async function confirmPayment(payment: PixPayment) {
+    setConfirmingId(payment.id);
+    setShowConfirm(null);
+    try {
+      const res = await fetch(`/api/admin/payments/${payment.id}/confirm`, {
+        method: "POST",
+        headers: adminHeaders(),
+      });
+      if (res.ok) {
+        await fetchPayments();
+      }
+    } finally {
+      setConfirmingId(null);
+    }
+  }
+
+  const pendentes = payments.filter((p) => p.status === "pending");
+  const confirmados = payments.filter((p) => p.status === "succeeded");
+
+  if (loading) {
+    return (
+      <div className="space-y-3">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="card animate-pulse">
+            <div className="h-4 bg-zinc-200 rounded w-1/2 mb-2" />
+            <div className="h-3 bg-zinc-100 rounded w-3/4 mb-2" />
+            <div className="h-8 bg-zinc-100 rounded w-full" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-5">
+      <div>
+        <h3 className="font-semibold text-sm text-blue mb-2">
+          Pendentes ({pendentes.length})
+        </h3>
+        {pendentes.length === 0 ? (
+          <div className="card text-center py-5">
+            <p className="text-sm text-zinc-500">Nenhum pagamento Pix pendente.</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {pendentes.map((p) => (
+              <div key={p.id} className="card space-y-2">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm truncate">
+                      {p.users?.name ?? "Usuario removido"}
+                    </p>
+                    <p className="text-xs text-zinc-500 mt-0.5">
+                      {formatDate(p.created_at)}
+                      {p.pix_txid && (
+                        <span className="ml-2 font-mono text-[10px] text-zinc-400">
+                          {p.pix_txid}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                  <p className="text-lg font-bold text-green shrink-0">
+                    {formatCurrency(p.amount)}
+                  </p>
+                </div>
+
+                {p.payment_items.length > 0 && (
+                  <ul className="text-xs text-zinc-600 space-y-0.5 border-l-2 border-zinc-200 pl-2">
+                    {p.payment_items.map((item) => (
+                      <li key={item.id} className="flex justify-between gap-2">
+                        <span className="truncate">{item.description}</span>
+                        <span className="text-zinc-400 shrink-0">
+                          {formatCurrency(item.amount)}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <button
+                  onClick={() => setShowConfirm(p)}
+                  disabled={confirmingId === p.id}
+                  className="btn-primary w-full text-sm disabled:opacity-50"
+                >
+                  {confirmingId === p.id ? "Confirmando..." : "Marcar como pago"}
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {confirmados.length > 0 && (
+        <details>
+          <summary className="cursor-pointer text-sm font-semibold text-zinc-500 hover:text-foreground mb-2">
+            Ja confirmados ({confirmados.length})
+          </summary>
+          <div className="space-y-2 mt-2">
+            {confirmados.map((p) => (
+              <div
+                key={p.id}
+                className="card flex items-center justify-between gap-3 opacity-70"
+              >
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {p.users?.name ?? "Usuario removido"}
+                  </p>
+                  <p className="text-xs text-zinc-400">
+                    {p.completed_at ? formatDate(p.completed_at) : formatDate(p.created_at)}
+                  </p>
+                </div>
+                <p className="text-sm font-bold text-green shrink-0">
+                  {formatCurrency(p.amount)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+
+      {/* Dialog de confirmacao */}
+      {showConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full space-y-4 shadow-xl">
+            <h3 className="font-bold text-lg text-blue">Confirmar recebimento?</h3>
+            <p className="text-sm text-zinc-600">
+              Voce confirma que recebeu{" "}
+              <span className="font-bold text-green">
+                {formatCurrency(showConfirm.amount)}
+              </span>{" "}
+              de <span className="font-bold">{showConfirm.users?.name}</span>?
+            </p>
+            <p className="text-xs text-zinc-500">
+              Isso marcara o pagamento como confirmado e liberara os itens para o usuario.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowConfirm(null)}
+                className="flex-1 btn-secondary text-sm"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={() => confirmPayment(showConfirm)}
+                className="flex-1 btn-primary text-sm"
+              >
+                Confirmar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // ── Main Admin Page ──────────────────────────────────────
 
 export default function AdminPage() {
@@ -803,6 +1001,7 @@ export default function AdminPage() {
     { key: "despesas", label: "Despesas" },
     { key: "resumo", label: "Resumo" },
     { key: "atividades", label: "Atividades" },
+    { key: "pix", label: "Pix" },
   ];
 
   return (
@@ -846,6 +1045,7 @@ export default function AdminPage() {
         {activeTab === "despesas" && <DespesasTab />}
         {activeTab === "resumo" && <ResumoTab />}
         {activeTab === "atividades" && <AtividadesTab />}
+        {activeTab === "pix" && <PixTab />}
       </div>
     </PageContainer>
   );

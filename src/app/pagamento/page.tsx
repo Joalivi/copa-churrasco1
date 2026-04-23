@@ -14,6 +14,7 @@ import { PhaseBar } from "@/components/layout/phase-bar";
 import { invalidateBalanceCache } from "@/hooks/use-user-balance";
 import { createClient } from "@/lib/supabase/client";
 import { getStripe } from "@/lib/stripe-client";
+import { PixQRDialog } from "@/components/payment/pix-qr-dialog";
 
 interface ItemSelecionavel {
   key: string;
@@ -93,7 +94,12 @@ function PagamentoContent() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [justPaidKeys, setJustPaidKeys] = useState<Set<string>>(new Set());
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"card" | "pix" | null>(null);
+  const [, setPaymentMethod] = useState<"card" | "pix" | null>(null);
+  const [pixData, setPixData] = useState<{
+    brCode: string;
+    qrDataUrl: string;
+    amount: number;
+  } | null>(null);
 
   // userId pode vir do hook ou da searchParam (fallback)
   const effectiveUserId = userId ?? searchParams.get("user_id");
@@ -250,7 +256,6 @@ function PagamentoContent() {
     try {
       const payload = {
         userId: effectiveUserId,
-        paymentMethod: method,
         items: itensSelecionados.map((item) => ({
           type: item.type,
           id: item.id,
@@ -259,7 +264,12 @@ function PagamentoContent() {
         })),
       };
 
-      const res = await fetch("/api/payments/create-session", {
+      const endpoint =
+        method === "pix"
+          ? "/api/payments/create-pix"
+          : "/api/payments/create-session";
+
+      const res = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -272,15 +282,29 @@ function PagamentoContent() {
         return;
       }
 
-      if (data.client_secret) {
+      if (method === "pix" && data.brCode) {
+        setPixData({
+          brCode: data.brCode,
+          qrDataUrl: data.qrDataUrl,
+          amount: data.amount,
+        });
+      } else if (method === "card" && data.client_secret) {
         setClientSecret(data.client_secret);
       }
     } catch {
-      setErro("Erro de conexão. Tente novamente.");
+      setErro("Erro de conexao. Tente novamente.");
     } finally {
       setProcessando(false);
     }
   };
+
+  const handlePixClose = useCallback(async () => {
+    setPixData(null);
+    // Refetch pra mostrar o payment pending no historico
+    if (effectiveUserId) {
+      await fetchData(effectiveUserId);
+    }
+  }, [effectiveUserId, fetchData]);
 
   const handleCheckoutComplete = useCallback(async () => {
     // Guarda os keys dos itens que acabaram de ser pagos para destaque visual
@@ -730,6 +754,16 @@ function PagamentoContent() {
                 })}
             </div>
           </div>
+        )}
+
+        {/* Pix QR Dialog */}
+        {pixData && (
+          <PixQRDialog
+            brCode={pixData.brCode}
+            qrDataUrl={pixData.qrDataUrl}
+            amount={pixData.amount}
+            onClose={handlePixClose}
+          />
         )}
 
         {/* Embedded Checkout Modal (fullscreen mobile) */}

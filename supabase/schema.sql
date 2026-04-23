@@ -74,6 +74,8 @@ CREATE TABLE payments (
   amount NUMERIC(10,2) NOT NULL,
   stripe_session_id TEXT,
   stripe_payment_intent_id TEXT,
+  pix_br_code TEXT,
+  pix_txid TEXT,
   payment_method TEXT,
   status TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('pending', 'processing', 'succeeded', 'failed')),
   created_at TIMESTAMPTZ DEFAULT NOW(),
@@ -103,6 +105,7 @@ CREATE INDEX idx_activity_checkins_activity ON activity_checkins(activity_id);
 CREATE INDEX idx_bolao_tickets_user ON bolao_tickets(user_id);
 CREATE INDEX idx_payments_user ON payments(user_id);
 CREATE INDEX idx_payments_status ON payments(status);
+CREATE UNIQUE INDEX idx_payments_pix_txid ON payments(pix_txid) WHERE pix_txid IS NOT NULL;
 CREATE INDEX idx_payment_items_payment ON payment_items(payment_id);
 CREATE INDEX idx_users_status ON users(status);
 
