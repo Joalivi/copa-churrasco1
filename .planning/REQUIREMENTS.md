@@ -52,24 +52,24 @@ Requirements para preparar a plataforma para uso real.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| PAG-01 | TBD | Pending |
-| PAG-02 | TBD | Pending |
-| PAG-03 | TBD | Pending |
-| PAG-04 | TBD | Pending |
-| UX-01 | TBD | Pending |
-| UX-02 | TBD | Pending |
-| UX-03 | TBD | Pending |
-| UX-04 | TBD | Pending |
-| FIN-01 | TBD | Pending |
-| FIN-02 | TBD | Pending |
-| TECH-01 | TBD | Pending |
-| TECH-02 | TBD | Pending |
+| TECH-01 | Phase 1 | Pending |
+| TECH-02 | Phase 1 | Pending |
+| PAG-01 | Phase 2 | Pending |
+| PAG-02 | Phase 2 | Pending |
+| PAG-03 | Phase 3 | Pending |
+| PAG-04 | Phase 3 | Pending |
+| UX-01 | Phase 3 | Pending |
+| UX-02 | Phase 3 | Pending |
+| FIN-01 | Phase 4 | Pending |
+| FIN-02 | Phase 4 | Pending |
+| UX-03 | Phase 5 | Pending |
+| UX-04 | Phase 5 | Pending |
 
 **Coverage:**
 - v1.0 requirements: 12 total
-- Mapped to phases: 0
-- Unmapped: 12
+- Mapped to phases: 12
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-04-22*
-*Last updated: 2026-04-22 after initial definition*
+*Last updated: 2026-04-22 after roadmap creation*
