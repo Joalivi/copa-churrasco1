@@ -2,6 +2,7 @@ import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { stripe } from "@/lib/stripe";
 import { calculateBottleCost } from "@/lib/utils";
 import { criarPaymentItems } from "@/lib/payment-helpers";
+import { TOTAL_RENTAL, AVISO_PRICE } from "@/lib/constants";
 
 interface PaymentItemInput {
   type: "activity" | "bolao" | "expense_share" | "aviso";
@@ -25,7 +26,7 @@ async function calculateServerAmount(
 ): Promise<number> {
   switch (item.type) {
     case "aviso":
-      return 35.0;
+      return AVISO_PRICE;
 
     case "bolao":
       return 2.0;
@@ -100,7 +101,7 @@ async function calculateServerAmount(
       const expenseShare = totalSplitExpenses / totalConfirmed;
 
       // Rateio do aluguel (mesmo cálculo do user-summary)
-      const rentalShare = 1650 / totalConfirmed - 35;
+      const rentalShare = TOTAL_RENTAL / totalConfirmed - AVISO_PRICE;
 
       return Math.round((expenseShare + rentalShare) * 100) / 100;
     }

@@ -1,8 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { calculateBottleCost } from "@/lib/utils";
-
-const TOTAL_RENTAL = 1650;
-const AVISO = 35;
+import { TOTAL_RENTAL, AVISO_PRICE } from "@/lib/constants";
 
 export async function GET() {
   const supabase = await createClient();
@@ -96,7 +94,7 @@ export async function GET() {
     0
   );
   const expenseShare = confirmedCount > 0 ? totalSplitExpenses / confirmedCount : 0;
-  const rentalShare = confirmedCount > 0 ? TOTAL_RENTAL / confirmedCount - AVISO : 0;
+  const rentalShare = confirmedCount > 0 ? TOTAL_RENTAL / confirmedCount - AVISO_PRICE : 0;
 
   // Calcular total de todos os usuarios confirmados
   // Agrupar checkins por usuario
