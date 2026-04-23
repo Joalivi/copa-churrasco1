@@ -21,6 +21,7 @@ interface ActivityCardProps {
   activity: ActivityWithCheckins;
   userId: string | null;
   eventStatus: string;
+  paidCheckinIds: Set<string>;
   onCheckinChange: () => void;
 }
 
@@ -28,6 +29,7 @@ export function ActivityCard({
   activity,
   userId,
   eventStatus,
+  paidCheckinIds,
   onCheckinChange,
 }: ActivityCardProps) {
   const [loading, setLoading] = useState(false);
@@ -42,6 +44,7 @@ export function ActivityCard({
   const isFull =
     activity.max_participants !== null &&
     activity.checkin_count >= activity.max_participants;
+  const isPaid = paidCheckinIds.has(activity.id);
 
   function getCostDisplay(): string {
     switch (activity.cost_type) {
@@ -100,6 +103,10 @@ export function ActivityCard({
         if (method === "POST") {
           setToastMsg(`${activity.emoji ?? "🎯"} ${activity.name} adicionado! Custo: ${getCostDisplay()}`);
         }
+      } else if (res.status === 409 && method === "DELETE") {
+        const err = await res.json();
+        setToastMsg(err.error ?? "Nao e possivel cancelar esta atividade");
+        onCheckinChange();
       }
     } finally {
       setLoading(false);
@@ -199,23 +206,27 @@ export function ActivityCard({
         {userId && (
           <button
             onClick={handleToggleCheckin}
-            disabled={loading || isClosed || (!isCheckedIn && isFull)}
+            disabled={loading || isClosed || isPaid || (!isCheckedIn && isFull)}
             className={cn(
               "flex-1 py-2.5 rounded-xl text-sm font-semibold transition-all",
-              isCheckedIn
-                ? "bg-red-50 text-red-600 hover:bg-red-100"
-                : "btn-primary",
+              isPaid
+                ? "bg-green/10 text-green cursor-default"
+                : isCheckedIn
+                  ? "bg-red-50 text-red-600 hover:bg-red-100"
+                  : "btn-primary",
               (loading || isClosed || (!isCheckedIn && isFull)) &&
                 "opacity-50 cursor-not-allowed"
             )}
           >
             {loading
               ? "Aguarde..."
-              : isCheckedIn
-                ? "Cancelar"
-                : isFull
-                  ? "Lotado"
-                  : "Participar"}
+              : isPaid
+                ? "Pago ✓"
+                : isCheckedIn
+                  ? "Cancelar"
+                  : isFull
+                    ? "Lotado"
+                    : "Participar"}
           </button>
         )}
 

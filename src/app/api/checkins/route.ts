@@ -96,6 +96,30 @@ export async function DELETE(request: Request) {
     );
   }
 
+  // Verificar se esta atividade ja foi paga (buscar checkin_id e checar payment_items)
+  const { data: checkin } = await supabase
+    .from("activity_checkins")
+    .select("id")
+    .eq("user_id", user_id)
+    .eq("activity_id", activity_id)
+    .maybeSingle();
+
+  if (checkin) {
+    const { data: paidItems } = await supabase
+      .from("payment_items")
+      .select("id, payments!inner(status)")
+      .eq("item_type", "activity")
+      .eq("item_id", checkin.id)
+      .eq("payments.status", "succeeded");
+
+    if (paidItems && paidItems.length > 0) {
+      return Response.json(
+        { error: "Nao e possivel cancelar uma atividade ja paga" },
+        { status: 409 }
+      );
+    }
+  }
+
   const { error } = await supabase
     .from("activity_checkins")
     .delete()

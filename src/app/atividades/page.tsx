@@ -22,6 +22,7 @@ export default function AtividadesPage() {
   const [activities, setActivities] = useState<ActivityWithCheckins[]>([]);
   const [eventStatus, setEventStatus] = useState("open");
   const [userId, setUserId] = useState<string | null>(null);
+  const [paidActivityIds, setPaidActivityIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -31,10 +32,16 @@ export default function AtividadesPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const [activitiesRes, statusRes] = await Promise.all([
+      const uid = localStorage.getItem("copa_user_id");
+      const fetches: Promise<Response>[] = [
         fetch("/api/activities"),
         fetch("/api/admin/event-status"),
-      ]);
+      ];
+      if (uid) {
+        fetches.push(fetch(`/api/user-summary?user_id=${uid}`));
+      }
+
+      const [activitiesRes, statusRes, summaryRes] = await Promise.all(fetches);
 
       if (activitiesRes.ok) {
         const data = await activitiesRes.json();
@@ -44,6 +51,28 @@ export default function AtividadesPage() {
       if (statusRes.ok) {
         const statusData = await statusRes.json();
         setEventStatus(statusData.status);
+      }
+
+      // Extrair IDs de atividades já pagas (mapear checkin_id → activity_id)
+      if (summaryRes?.ok) {
+        const summary = await summaryRes.json();
+        // Montar mapa checkin_id → activity_id
+        const checkinToActivity: Record<string, string> = {};
+        for (const c of summary.activity_checkins || []) {
+          checkinToActivity[c.checkin_id] = c.activity_id;
+        }
+        // Coletar activity_ids cujo checkin foi pago
+        const paidIds = new Set<string>();
+        for (const payment of summary.payments || []) {
+          if (payment.status !== "succeeded") continue;
+          for (const item of payment.payment_items || []) {
+            if (item.item_type === "activity" && item.item_id) {
+              const actId = checkinToActivity[item.item_id];
+              if (actId) paidIds.add(actId);
+            }
+          }
+        }
+        setPaidActivityIds(paidIds);
       }
     } finally {
       setLoading(false);
@@ -125,6 +154,7 @@ export default function AtividadesPage() {
                 activity={activity}
                 userId={userId}
                 eventStatus={eventStatus}
+                paidCheckinIds={paidActivityIds}
                 onCheckinChange={fetchData}
               />
             ))}
