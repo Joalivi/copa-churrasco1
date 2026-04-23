@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { isValidUUID } from "@/lib/validators";
 
 export async function GET() {
   const supabase = await createClient();
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const { user_id, home_score, away_score } = body;
 
-  if (!user_id || home_score === undefined || away_score === undefined) {
+  if (!isValidUUID(user_id) || home_score === undefined || away_score === undefined) {
     return Response.json(
       { error: "user_id, home_score e away_score sao obrigatorios" },
       { status: 400 }

@@ -12,7 +12,8 @@ export async function GET() {
     .order("created_at", { ascending: true });
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error("Users GET error:", error);
+    return NextResponse.json({ error: "Erro ao buscar usuarios" }, { status: 500 });
   }
 
   return NextResponse.json(data);
@@ -53,8 +54,8 @@ export async function POST(request: NextRequest) {
   let finalPhotoUrl = photo_url || null;
   if (instagram && !finalPhotoUrl) {
     const handle = instagram.replace(/^@/, "").trim();
-    if (handle.length > 0) {
-      finalPhotoUrl = `https://unavatar.io/instagram/${handle}`;
+    if (handle.length > 0 && /^[a-zA-Z0-9._]{1,30}$/.test(handle)) {
+      finalPhotoUrl = `https://unavatar.io/instagram/${encodeURIComponent(handle)}`;
     }
   }
 
@@ -74,7 +75,11 @@ export async function POST(request: NextRequest) {
     .single();
 
   if (error) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error.code === "23505") {
+      return NextResponse.json({ error: "Usuario ja cadastrado" }, { status: 409 });
+    }
+    console.error("Users POST error:", error);
+    return NextResponse.json({ error: "Erro ao cadastrar usuario" }, { status: 500 });
   }
 
   return NextResponse.json(data, { status: 201 });

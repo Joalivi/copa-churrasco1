@@ -1,3 +1,10 @@
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/** Valida UUID v4 */
+export function isValidUUID(value: unknown): value is string {
+  return typeof value === "string" && UUID_RE.test(value);
+}
+
 /** Valida CPF brasileiro */
 export function isValidCPF(raw: string): boolean {
   const digits = raw.replace(/\D/g, "");

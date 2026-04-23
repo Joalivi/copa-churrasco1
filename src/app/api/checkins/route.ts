@@ -1,11 +1,12 @@
 import { createClient } from "@/lib/supabase/server";
+import { isValidUUID } from "@/lib/validators";
 
 export async function POST(request: Request) {
   const supabase = await createClient();
   const body = await request.json();
   const { user_id, activity_id } = body;
 
-  if (!user_id || !activity_id) {
+  if (!isValidUUID(user_id) || !isValidUUID(activity_id)) {
     return Response.json(
       { error: "user_id e activity_id sao obrigatorios" },
       { status: 400 }
@@ -74,7 +75,7 @@ export async function DELETE(request: Request) {
   const body = await request.json();
   const { user_id, activity_id } = body;
 
-  if (!user_id || !activity_id) {
+  if (!isValidUUID(user_id) || !isValidUUID(activity_id)) {
     return Response.json(
       { error: "user_id e activity_id sao obrigatorios" },
       { status: 400 }

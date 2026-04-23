@@ -89,42 +89,23 @@ export default function BolaoPage() {
           </p>
         </div>
 
-        {/* Card do jogo */}
-        <div className="card bg-gradient-to-b from-blue to-[#001a4d] border border-blue/50 animate-slide-up text-white">
-          <div className="flex items-center justify-center gap-4">
-            <div className="text-center">
-              <span className="text-3xl">🇧🇷</span>
-              <p className="text-sm font-bold mt-1">Brasil</p>
-            </div>
-            <div className="text-center">
-              <p className="text-xs text-white/60 uppercase tracking-wide">
-                vs
-              </p>
-            </div>
-            <div className="text-center">
-              <span className="text-3xl">🇲🇦</span>
-              <p className="text-sm font-bold mt-1">Marrocos</p>
-            </div>
+        {/* Resumo do bolao */}
+        <div className="flex gap-3">
+          <div className="card flex-1 text-center border border-green/10 animate-slide-up" style={{ background: "rgba(0,156,59,0.04)" }}>
+            <p className="text-xs text-zinc-500 uppercase tracking-wide font-medium">
+              Total arrecadado
+            </p>
+            <p className="text-lg font-bold text-green mt-1">
+              {formatCurrency(totalPool)}
+            </p>
           </div>
-
-          {/* Stats */}
-          <div className="flex justify-around mt-4 pt-3 border-t border-white/20">
-            <div className="text-center">
-              <p className="text-lg font-bold text-yellow">
-                {formatCurrency(totalPool)}
-              </p>
-              <p className="text-xs text-white/70 uppercase tracking-wide">
-                Total arrecadado
-              </p>
-            </div>
-            <div className="text-center">
-              <p className="text-lg font-bold text-yellow">
-                {data.totalTickets}
-              </p>
-              <p className="text-xs text-white/70 uppercase tracking-wide">
-                Total de tickets
-              </p>
-            </div>
+          <div className="card flex-1 text-center border border-blue/10 animate-slide-up delay-1" style={{ background: "rgba(0,39,118,0.04)" }}>
+            <p className="text-xs text-zinc-500 uppercase tracking-wide font-medium">
+              Tickets
+            </p>
+            <p className="text-lg font-bold text-blue mt-1">
+              {data.totalTickets}
+            </p>
           </div>
         </div>
 

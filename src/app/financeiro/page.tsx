@@ -150,15 +150,6 @@ export default function FinanceiroPage() {
               )}
             </div>
 
-            {/* Por Pessoa (est.) */}
-            <div className="card bg-zinc-50 border border-zinc-100 animate-slide-up delay-3">
-              <p className="text-[10px] uppercase tracking-wide text-zinc-500 font-medium">
-                Por Pessoa (est.)
-              </p>
-              <p className="text-lg font-bold text-foreground mt-1">
-                {formatCurrency(stats?.perCapita ?? 0)}
-              </p>
-            </div>
           </div>
         )}
 
