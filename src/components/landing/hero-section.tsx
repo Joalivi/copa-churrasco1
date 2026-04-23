@@ -1,13 +1,48 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useState } from "react";
 
 export default function HeroSection() {
+  const [userStatus, setUserStatus] = useState<"loading" | "guest" | "pending" | "confirmed">("loading");
+
+  useEffect(() => {
+    const userId = localStorage.getItem("copa_user_id");
+    if (!userId) {
+      setUserStatus("guest");
+      return;
+    }
+
+    // Fetch user status from API
+    fetch(`/api/user-summary?user_id=${userId}`)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.user?.status === "confirmed") {
+          setUserStatus("confirmed");
+        } else {
+          setUserStatus("pending");
+        }
+      })
+      .catch(() => setUserStatus("pending"));
+  }, []);
+
+  const buttonConfig = {
+    loading: { href: "/confirmar", text: "Confirmar Presenca", icon: "\u2192" },
+    guest: { href: "/confirmar", text: "Confirmar Presenca", icon: "\u2192" },
+    pending: { href: "/pagamento", text: "Pagar Aviso", icon: "\u2192" },
+    confirmed: { href: "/pagamento", text: "Presenca Confirmada", icon: "\u2713" },
+  };
+
+  const btn = buttonConfig[userStatus];
+  const isConfirmed = userStatus === "confirmed";
+
   return (
     <section className="relative overflow-hidden rounded-2xl text-white py-10 px-6 text-center animate-fade-in">
       {/* Background photo */}
       <Image
         src="/fotos/chacara-13.jpeg"
-        alt="Piscina do Sítio São José"
+        alt="Piscina do Sitio Sao Jose"
         fill
         className="object-cover"
         priority
@@ -59,11 +94,20 @@ export default function HeroSection() {
         </div>
 
         <Link
-          href="/confirmar"
-          className="mt-4 inline-flex items-center gap-2 bg-yellow text-[#1A1A2E] font-bold text-lg px-8 py-3.5 rounded-xl shadow-xl shadow-yellow/30 hover:shadow-2xl hover:shadow-yellow/40 hover:bg-[#e6c900] active:scale-95 transition-all animate-slide-up delay-5 animate-glow-pulse"
+          href={btn.href}
+          className={`mt-4 inline-flex items-center gap-2 font-bold text-lg px-8 py-3.5 rounded-xl shadow-xl active:scale-95 transition-all animate-slide-up delay-5 ${
+            isConfirmed
+              ? "bg-white/20 backdrop-blur-sm text-white border border-white/30 shadow-white/10"
+              : "bg-yellow text-[#1A1A2E] shadow-yellow/30 hover:shadow-2xl hover:shadow-yellow/40 hover:bg-[#e6c900] animate-glow-pulse"
+          }`}
         >
-          Confirmar Presenca
-          <span aria-hidden="true">&rarr;</span>
+          {isConfirmed && (
+            <span className="text-green-300 text-xl">&#10003;</span>
+          )}
+          {btn.text}
+          {!isConfirmed && (
+            <span aria-hidden="true">&rarr;</span>
+          )}
         </Link>
       </div>
     </section>

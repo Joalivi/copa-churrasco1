@@ -110,6 +110,25 @@ const navItems = [
     ),
   },
   {
+    label: "Financeiro",
+    href: "/financeiro",
+    icon: (
+      <svg
+        width="24"
+        height="24"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <line x1="12" y1="1" x2="12" y2="23"/>
+        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+    ),
+  },
+  {
     label: "Pagar",
     href: "/pagamento",
     icon: (
@@ -154,7 +173,7 @@ export function BottomNav() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex flex-col items-center justify-center gap-0.5 min-w-[52px] min-h-[44px] py-2 px-1 rounded-xl transition-colors ${
+                className={`flex flex-col items-center justify-center gap-0.5 min-w-[40px] min-h-[44px] py-2 px-0.5 rounded-xl transition-colors ${
                   isActive
                     ? "text-yellow bg-white/15"
                     : "text-white/80 hover:text-white"
