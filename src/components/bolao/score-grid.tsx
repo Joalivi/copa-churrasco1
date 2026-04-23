@@ -78,7 +78,7 @@ export function ScoreGrid({
                     >
                       {/* Badge de contagem */}
                       {count > 0 && (
-                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-green text-white text-[9px] font-bold rounded-full flex items-center justify-center px-1 shadow-sm">
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] bg-green text-white text-[10px] font-bold rounded-full flex items-center justify-center px-1 shadow-sm">
                           {count}
                         </span>
                       )}
@@ -91,11 +91,11 @@ export function ScoreGrid({
                       </div>
 
                       {count > 0 ? (
-                        <div className="text-[10px] mt-0.5 font-semibold text-amber-600">
+                        <div className="text-xs mt-0.5 font-semibold text-amber-600">
                           🏆 {formatCurrency(payout)}
                         </div>
                       ) : (
-                        <div className="text-[10px] mt-0.5 text-zinc-300">
+                        <div className="text-xs mt-0.5 text-zinc-300">
                           disponivel
                         </div>
                       )}
@@ -109,7 +109,7 @@ export function ScoreGrid({
       </table>
 
       {/* Legenda melhorada */}
-      <div className="flex items-center justify-center gap-4 mt-4 text-[10px] text-zinc-500">
+      <div className="flex items-center justify-center gap-4 mt-4 text-xs text-zinc-500">
         <span className="flex items-center gap-1.5">
           <span className="w-3 h-3 rounded bg-green/8 border border-green/20" />
           Poucos
@@ -119,7 +119,7 @@ export function ScoreGrid({
           Popular
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="w-3 h-3 rounded-full bg-green text-white text-[7px] flex items-center justify-center font-bold">3</span>
+          <span className="w-3 h-3 rounded-full bg-green text-white text-[9px] flex items-center justify-center font-bold">3</span>
           Tickets pagos
         </span>
       </div>

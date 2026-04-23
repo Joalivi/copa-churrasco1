@@ -415,7 +415,7 @@ function PagamentoContent() {
         {/* Resumo de saldo */}
         <div className="grid grid-cols-2 gap-3">
           <div className="card bg-blue/5 border border-blue/10">
-            <p className="text-[10px] uppercase tracking-wide text-zinc-500 font-medium">
+            <p className="text-xs uppercase tracking-wide text-zinc-500 font-medium">
               Total a pagar
             </p>
             <p className="text-lg font-bold text-blue mt-1">
@@ -426,7 +426,7 @@ function PagamentoContent() {
             </p>
           </div>
           <div className="card bg-green/5 border border-green/10">
-            <p className="text-[10px] uppercase tracking-wide text-zinc-500 font-medium">
+            <p className="text-xs uppercase tracking-wide text-zinc-500 font-medium">
               Já pago
             </p>
             <p className="text-lg font-bold text-green mt-1">
@@ -490,7 +490,7 @@ function PagamentoContent() {
                               <p className="text-sm font-medium text-foreground flex items-center gap-1.5">
                                 {item.description}
                                 {item.type === "aviso" && (
-                                  <span className="text-[10px] bg-yellow/20 text-yellow-700 px-1.5 py-0.5 rounded-full font-medium">
+                                  <span className="text-xs bg-yellow/20 text-yellow-700 px-1.5 py-0.5 rounded-full font-medium">
                                     obrigatório
                                   </span>
                                 )}
@@ -502,7 +502,7 @@ function PagamentoContent() {
                             <p className="text-sm font-bold text-foreground shrink-0">
                               {formatCurrency(item.amount)}
                               {eventoAberto && item.isDynamic && (
-                                <span className="text-[10px] text-zinc-400 ml-1 font-normal">(est.)</span>
+                                <span className="text-xs text-zinc-400 ml-1 font-normal">(est.)</span>
                               )}
                             </p>
                           </label>
@@ -544,7 +544,7 @@ function PagamentoContent() {
                             <p className="text-sm font-bold text-foreground shrink-0">
                               {formatCurrency(item.amount)}
                               {eventoAberto && item.isDynamic && (
-                                <span className="text-[10px] text-zinc-400 ml-1 font-normal">(est.)</span>
+                                <span className="text-xs text-zinc-400 ml-1 font-normal">(est.)</span>
                               )}
                             </p>
                           </label>
@@ -622,7 +622,7 @@ function PagamentoContent() {
                     className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-green text-white font-semibold text-sm hover:bg-green/90 shadow-md active:scale-[0.97] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <span aria-hidden="true">&#128179;</span>
-                    Cartao
+                    Cartão
                   </button>
                   <button
                     onClick={() => handlePagar("pix")}
@@ -712,7 +712,7 @@ function PagamentoContent() {
                         >
                           {item.description}
                           {justPaid && (
-                            <span className="ml-2 text-[10px] bg-green text-white px-1.5 py-0.5 rounded-full font-bold">
+                            <span className="ml-2 text-xs bg-green text-white px-1.5 py-0.5 rounded-full font-bold">
                               PAGO AGORA
                             </span>
                           )}

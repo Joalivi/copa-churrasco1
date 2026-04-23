@@ -52,7 +52,7 @@ export default function FeatureCards() {
     <section className="flex flex-col gap-4">
       <h2 className="text-xl font-bold text-blue">Acesso Rapido</h2>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {features.map((feature) => (
           <Link
             key={feature.href}

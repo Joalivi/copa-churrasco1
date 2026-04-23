@@ -52,14 +52,8 @@ export default function HeroSection() {
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-green/80 via-green/65 to-[#005a22]/85" />
 
-      {/* Yellow diamond accent */}
-      <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 rotate-45 border-2 border-yellow/20 rounded-md pointer-events-none animate-slow-spin"
-        aria-hidden="true"
-      />
-
       <div className="relative z-10 flex flex-col items-center gap-4">
-        <span className="text-4xl animate-slide-up delay-1 animate-float" role="img" aria-label="Bola de futebol">
+        <span className="text-4xl animate-slide-up delay-1" role="img" aria-label="Bola de futebol">
           &#9917;
         </span>
 
@@ -98,7 +92,7 @@ export default function HeroSection() {
           className={`mt-4 inline-flex items-center gap-2 font-bold text-lg px-8 py-3.5 rounded-xl shadow-xl active:scale-95 transition-all animate-slide-up delay-5 ${
             isConfirmed
               ? "bg-white/20 backdrop-blur-sm text-white border border-white/30 shadow-white/10"
-              : "bg-yellow text-[#1A1A2E] shadow-yellow/30 hover:shadow-2xl hover:shadow-yellow/40 hover:bg-[#e6c900] animate-glow-pulse"
+              : "bg-yellow text-[#1A1A2E] shadow-yellow/30 hover:shadow-2xl hover:shadow-yellow/40 hover:bg-[#e6c900]"
           }`}
         >
           {isConfirmed && (

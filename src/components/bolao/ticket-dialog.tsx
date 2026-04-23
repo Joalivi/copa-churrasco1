@@ -109,7 +109,7 @@ export function TicketDialog({
             <span className="text-2xl text-zinc-300 font-light">x</span>
             <div className="text-center">
               <p className="text-xs text-zinc-500 mb-1">Marrocos</p>
-              <span className="text-4xl font-bold text-red-600 glow-blue">
+              <span className="text-4xl font-bold text-red-600">
                 {awayScore}
               </span>
             </div>
