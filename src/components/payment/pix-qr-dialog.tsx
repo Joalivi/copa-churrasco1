@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { formatCurrency } from "@/lib/utils";
 
 interface PixQRDialogProps {
@@ -10,22 +10,37 @@ interface PixQRDialogProps {
   onClose: () => void;
 }
 
+type CopyState = "idle" | "copied" | "fallback";
+
 export function PixQRDialog({
   brCode,
   qrDataUrl,
   amount,
   onClose,
 }: PixQRDialogProps) {
-  const [copied, setCopied] = useState(false);
+  const [copyState, setCopyState] = useState<CopyState>("idle");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   async function handleCopy() {
+    // Fallback visual: seleciona o texto no textarea pra o user poder Ctrl+C manualmente.
+    textareaRef.current?.focus();
+    textareaRef.current?.select();
+
+    // Tenta Clipboard API (gesto de click do user geralmente libera, exceto em ifames/headless)
     try {
-      await navigator.clipboard.writeText(brCode);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(brCode);
+        setCopyState("copied");
+        setTimeout(() => setCopyState("idle"), 2000);
+        return;
+      }
     } catch {
-      // sem clipboard API: o user pode selecionar do textarea direto
+      // passa pro fallback
     }
+
+    // Fallback: textarea ja foi selecionado — user pode copiar manualmente
+    setCopyState("fallback");
+    setTimeout(() => setCopyState("idle"), 3500);
   }
 
   return (
@@ -74,6 +89,7 @@ export function PixQRDialog({
               Pix copia-e-cola
             </p>
             <textarea
+              ref={textareaRef}
               value={brCode}
               readOnly
               rows={3}
@@ -83,12 +99,18 @@ export function PixQRDialog({
             <button
               onClick={handleCopy}
               className={`w-full mt-2 py-2.5 px-3 rounded-xl text-sm font-semibold transition-all ${
-                copied
+                copyState === "copied"
                   ? "bg-green/10 text-green"
-                  : "bg-[#32BCAD] text-white hover:bg-[#2aa89b]"
+                  : copyState === "fallback"
+                    ? "bg-amber-50 text-amber-700 border border-amber-200"
+                    : "bg-[#32BCAD] text-white hover:bg-[#2aa89b]"
               }`}
             >
-              {copied ? "Copiado ✓" : "Copiar codigo"}
+              {copyState === "copied"
+                ? "Copiado ✓"
+                : copyState === "fallback"
+                  ? "Selecionado — use Ctrl+C / Cmd+C"
+                  : "Copiar codigo"}
             </button>
           </div>
 

@@ -40,11 +40,14 @@ export async function GET(request: NextRequest) {
       .from("users")
       .select("id", { count: "exact", head: true })
       .eq("status", "confirmed"),
+    // Retorna TODOS os payments (pending + succeeded + failed).
+    // O filtro por status eh aplicado nas agregacoes abaixo.
+    // Isso permite o front mostrar Pix pending no historico enquanto admin nao confirma.
     supabase
       .from("payments")
       .select("*, payment_items(*)")
       .eq("user_id", userId)
-      .eq("status", "succeeded"),
+      .order("created_at", { ascending: false }),
   ]);
 
   if (userRes.error || !userRes.data) {
@@ -61,7 +64,11 @@ export async function GET(request: NextRequest) {
   const tickets = ticketsRes.data || [];
   const expenses = expensesRes.data || [];
   const confirmedCount = confirmedRes.count || 1;
-  const succeededPayments = paymentsRes.data || [];
+  const allPayments = paymentsRes.data || [];
+  // Agregacoes financeiras consideram apenas pagamentos confirmados
+  const succeededPayments = allPayments.filter(
+    (p) => p.status === "succeeded"
+  );
 
   // Contar checkins por atividade (para calculo de custo)
   const checkinCountByActivity: Record<string, number> = {};
@@ -148,7 +155,8 @@ export async function GET(request: NextRequest) {
   const totalOwed =
     rentalShare + expenseShare + totalActivityCost + bolaoTotal;
 
-  // Total pago (excluir pagamentos de aviso do calculo de balance)
+  // Total pago usado no calculo de balance (exclui aviso, que tambem nao
+  // esta em totalOwed — simetria matematica: aviso eh pre-deduzido do aluguel).
   const totalPaid = succeededPayments.reduce((sum, p) => {
     const items = (p.payment_items || []) as Array<{
       item_type: string;
@@ -157,14 +165,22 @@ export async function GET(request: NextRequest) {
     const nonAvisoAmount = items
       .filter((item) => item.item_type !== "aviso")
       .reduce((s, item) => s + item.amount, 0);
-    // Se nao tem items, usar o amount do pagamento (exceto se for exatamente 35 - provavel aviso)
     if (items.length === 0) {
-      return sum + p.amount;
+      // Sem items: assumir que eh inconsistencia — ignorar (ver CR-01 review)
+      console.warn(`[user-summary] payment ${p.id} succeeded sem items; ignorando no totalPaid`);
+      return sum;
     }
     return sum + nonAvisoAmount;
   }, 0);
 
-  // Saldo
+  // Total pago "bruto" incluindo aviso — usado APENAS no card "Ja pago" do UI,
+  // pra evitar UX confusa onde user paga R$35 de aviso e ve "Ja pago R$0".
+  const totalPaidDisplay = succeededPayments.reduce(
+    (sum, p) => sum + Number(p.amount),
+    0
+  );
+
+  // Saldo (usa totalPaid sem aviso pra bater com totalOwed)
   const balance = totalOwed - totalPaid;
 
   // Verificar se pagou aviso
@@ -187,8 +203,9 @@ export async function GET(request: NextRequest) {
     total_activity_cost: Math.round(totalActivityCost * 100) / 100,
     bolao_total: bolaoTotal,
     total_owed: Math.round(totalOwed * 100) / 100,
-    payments: succeededPayments,
+    payments: allPayments,
     total_paid: Math.round(totalPaid * 100) / 100,
+    total_paid_display: Math.round(totalPaidDisplay * 100) / 100,
     balance: Math.round(balance * 100) / 100,
     confirmed_count: confirmedCount,
     aviso_paid: avisoPaid,

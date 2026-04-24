@@ -53,6 +53,7 @@ interface UserSummary {
   rental_share: number;
   total_owed: number;
   total_paid: number;
+  total_paid_display: number;
   balance: number;
   aviso_paid: boolean;
   payments: Array<{
@@ -456,7 +457,7 @@ function PagamentoContent() {
               Já pago
             </p>
             <p className="text-lg font-bold text-green mt-1">
-              {formatCurrency(summary.total_paid)}
+              {formatCurrency(summary.total_paid_display ?? summary.total_paid)}
             </p>
           </div>
         </div>
