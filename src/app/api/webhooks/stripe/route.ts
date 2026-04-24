@@ -65,60 +65,86 @@ export async function POST(request: Request) {
       .select("id")
       .single();
 
-    if (updateError || !payment) {
-      console.error("Erro ao atualizar pagamento:", updateError);
+    // Helper: resolver paymentId (achado ou inserido)
+    async function resolvePaymentId(): Promise<string | null> {
+      if (payment?.id) return payment.id;
 
-      // IDEMPOTENCY: Verificar se esta sessão já foi processada (D-04)
-      const { data: existingPayment } = await supabase
+      // Update nao bateu em nenhuma row. Pode ser que:
+      // (a) webhook chegou antes do insert do create-session — precisa inserir
+      // (b) pagamento ja foi processado antes — just return existing id
+      const { data: existing } = await supabase
         .from("payments")
-        .select("id")
+        .select("id, status")
         .eq("stripe_session_id", session.id)
         .maybeSingle();
 
-      if (existingPayment) {
-        // Pagamento já existe — verificar se payment_items também existem
-        const { count: itemCount } = await supabase
-          .from("payment_items")
-          .select("id", { count: "exact", head: true })
-          .eq("payment_id", existingPayment.id);
-
-        if ((itemCount ?? 0) > 0) {
-          // Totalmente processado — retornar sucesso sem duplicar
-          return Response.json({ received: true });
+      if (existing) {
+        // Caso (b): pagamento existe. Se status != succeeded, atualiza.
+        if (existing.status !== "succeeded") {
+          await supabase
+            .from("payments")
+            .update({
+              status: "succeeded",
+              stripe_payment_intent_id: session.payment_intent as string | null,
+              completed_at: new Date().toISOString(),
+            })
+            .eq("id", existing.id);
         }
+        return existing.id;
+      }
 
-        // Payment existe mas items faltando — criar somente items
-        await criarPaymentItems(supabase, existingPayment.id, items);
-      } else {
-        // Genuinamente novo — inserir fallback
-        const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
-        const { data: inserted, error: insertError } = await supabase
-          .from("payments")
-          .insert({
+      // Caso (a): webhook chegou antes do insert de create-session.
+      // Usar UPSERT na unique constraint de stripe_session_id previne duplicatas.
+      const totalCentavos = items.reduce(
+        (sum, item) => sum + Math.round(item.amount * 100),
+        0
+      );
+
+      const { data: upserted, error: upsertError } = await supabase
+        .from("payments")
+        .upsert(
+          {
             user_id: userId,
-            amount: Math.round(totalAmount * 100) / 100,
+            amount: totalCentavos / 100,
             stripe_session_id: session.id,
             stripe_payment_intent_id: session.payment_intent as string | null,
             status: "succeeded",
             payment_method: "card",
             completed_at: new Date().toISOString(),
-          })
-          .select("id")
-          .single();
+          },
+          { onConflict: "stripe_session_id" }
+        )
+        .select("id")
+        .single();
 
-        if (insertError || !inserted) {
-          console.error("Erro crítico ao inserir pagamento:", insertError);
-          return Response.json(
-            { error: "Erro ao processar pagamento" },
-            { status: 500 }
-          );
-        }
-
-        await criarPaymentItems(supabase, inserted.id, items);
+      if (upsertError || !upserted) {
+        console.error("Erro critico ao upsert payment:", upsertError);
+        return null;
       }
-    } else {
-      // Criar registros de payment_items
-      await criarPaymentItems(supabase, payment.id, items);
+      return upserted.id;
+    }
+
+    const paymentId = await resolvePaymentId();
+    if (!paymentId) {
+      return Response.json(
+        { error: "Erro ao processar pagamento" },
+        { status: 500 }
+      );
+    }
+
+    // Insere payment_items se ainda nao existem (idempotente)
+    const { count: itemCount } = await supabase
+      .from("payment_items")
+      .select("id", { count: "exact", head: true })
+      .eq("payment_id", paymentId);
+
+    if ((itemCount ?? 0) === 0) {
+      const itemsResult = await criarPaymentItems(supabase, paymentId, items);
+      if (!itemsResult.ok) {
+        console.error("[webhook] Falha ao inserir payment_items:", itemsResult.error);
+        // Stripe vai retentar; proxima tentativa cai no branch de "items ja existem"
+        return Response.json({ error: "Retry" }, { status: 500 });
+      }
     }
 
     // Se algum item for do tipo 'aviso', atualizar status do usuário para 'confirmed'

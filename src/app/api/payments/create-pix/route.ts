@@ -46,10 +46,10 @@ export async function POST(request: Request) {
     }
   }
 
-  // Env vars do Pix
-  const pixKey = process.env.PIX_KEY;
-  const merchantName = process.env.PIX_MERCHANT_NAME;
-  const merchantCity = process.env.PIX_MERCHANT_CITY;
+  // Env vars do Pix (trim pra evitar espaços que bugam o EMV)
+  const pixKey = process.env.PIX_KEY?.trim();
+  const merchantName = process.env.PIX_MERCHANT_NAME?.trim();
+  const merchantCity = process.env.PIX_MERCHANT_CITY?.trim();
 
   if (!pixKey || !merchantName || !merchantCity) {
     console.error("PIX_KEY / PIX_MERCHANT_NAME / PIX_MERCHANT_CITY nao configurados");
@@ -84,32 +84,80 @@ export async function POST(request: Request) {
     );
   }
 
-  const totalAmount =
-    Math.round(
-      serverItems.reduce((sum, item) => sum + item.serverAmount, 0) * 100
-    ) / 100;
+  // Somar em centavos pra evitar drift de precisao floating-point
+  const totalCentavos = serverItems.reduce(
+    (sum, item) => sum + Math.round(item.serverAmount * 100),
+    0
+  );
+  const totalAmount = totalCentavos / 100;
 
   if (totalAmount <= 0) {
     return Response.json({ error: "Valor total invalido" }, { status: 400 });
   }
 
-  // Gera txid unico
-  const txid = gerarTxid();
+  // Insere payment com retry em caso de colisao de txid (raro mas possivel)
+  let paymentId: string | null = null;
+  let finalTxid = "";
+  let finalBrCode = "";
+  const maxRetries = 3;
 
-  // Gera BR Code
-  let brCode: string;
-  try {
-    brCode = gerarPixBRCode({
-      chave: pixKey,
-      nome: merchantName,
-      cidade: merchantCity,
-      valor: totalAmount,
-      txid,
-    });
-  } catch (err) {
-    console.error("Erro ao gerar BR Code:", err);
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const candidateTxid = gerarTxid();
+
+    let candidateBrCode: string;
+    try {
+      candidateBrCode = gerarPixBRCode({
+        chave: pixKey,
+        nome: merchantName,
+        cidade: merchantCity,
+        valor: totalAmount,
+        txid: candidateTxid,
+      });
+    } catch (err) {
+      console.error("Erro ao gerar BR Code:", err);
+      return Response.json(
+        { error: "Erro ao gerar codigo Pix" },
+        { status: 500 }
+      );
+    }
+
+    const { data: payment, error: paymentError } = await serviceClient
+      .from("payments")
+      .insert({
+        user_id: userId,
+        amount: totalAmount,
+        pix_br_code: candidateBrCode,
+        pix_txid: candidateTxid,
+        status: "pending",
+        payment_method: "pix",
+      })
+      .select("id")
+      .single();
+
+    if (!paymentError && payment) {
+      paymentId = payment.id;
+      finalTxid = candidateTxid;
+      finalBrCode = candidateBrCode;
+      break;
+    }
+
+    // 23505 = unique violation em Postgres — retry
+    if (paymentError?.code === "23505") {
+      console.warn(`Colisao de pix_txid, retry ${attempt + 1}/${maxRetries}`);
+      continue;
+    }
+
+    console.error("Erro ao criar payment:", paymentError);
     return Response.json(
-      { error: "Erro ao gerar codigo Pix" },
+      { error: "Erro ao registrar pagamento" },
+      { status: 500 }
+    );
+  }
+
+  if (!paymentId) {
+    console.error("Falha em gerar txid unico apos retries");
+    return Response.json(
+      { error: "Erro ao registrar pagamento" },
       { status: 500 }
     );
   }
@@ -117,36 +165,16 @@ export async function POST(request: Request) {
   // Gera QR como data URL
   let qrDataUrl: string;
   try {
-    qrDataUrl = await QRCode.toDataURL(brCode, {
+    qrDataUrl = await QRCode.toDataURL(finalBrCode, {
       errorCorrectionLevel: "M",
       width: 300,
       margin: 1,
     });
   } catch (err) {
     console.error("Erro ao gerar QR code:", err);
+    // Rollback: o payment foi inserido mas QR falhou
+    await serviceClient.from("payments").delete().eq("id", paymentId);
     return Response.json({ error: "Erro ao gerar QR code" }, { status: 500 });
-  }
-
-  // Insere payment (pending)
-  const { data: payment, error: paymentError } = await serviceClient
-    .from("payments")
-    .insert({
-      user_id: userId,
-      amount: totalAmount,
-      pix_br_code: brCode,
-      pix_txid: txid,
-      status: "pending",
-      payment_method: "pix",
-    })
-    .select("id")
-    .single();
-
-  if (paymentError || !payment) {
-    console.error("Erro ao criar payment:", paymentError);
-    return Response.json(
-      { error: "Erro ao registrar pagamento" },
-      { status: 500 }
-    );
   }
 
   // Insere payment_items imediatamente (nao tem webhook pra fazer isso)
@@ -158,13 +186,26 @@ export async function POST(request: Request) {
     })
   );
 
-  await criarPaymentItems(serviceClient, payment.id, paymentItems);
+  const itemsResult = await criarPaymentItems(
+    serviceClient,
+    paymentId,
+    paymentItems
+  );
+
+  if (!itemsResult.ok) {
+    // Rollback: nao deixar payment "fantasma" sem items
+    await serviceClient.from("payments").delete().eq("id", paymentId);
+    return Response.json(
+      { error: "Erro ao registrar itens do pagamento" },
+      { status: 500 }
+    );
+  }
 
   return Response.json({
-    paymentId: payment.id,
-    brCode,
+    paymentId,
+    brCode: finalBrCode,
     qrDataUrl,
     amount: totalAmount,
-    txid,
+    txid: finalTxid,
   });
 }

@@ -60,9 +60,10 @@ function sanitize(s: string, max: number): string {
     .slice(0, max);
 }
 
-/** Campo 26: Merchant Account Information - Pix. */
+/** Campo 26: Merchant Account Information - Pix.
+ *  GUI em UPPERCASE por compatibilidade (spec BCB usa maiuscula). */
 function buildMerchantAccount(chave: string): string {
-  const gui = tlv("00", "br.gov.bcb.pix");
+  const gui = tlv("00", "BR.GOV.BCB.PIX");
   const key = tlv("01", chave);
   return tlv("26", gui + key);
 }

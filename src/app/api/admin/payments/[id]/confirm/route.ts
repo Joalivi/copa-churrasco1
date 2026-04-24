@@ -23,7 +23,7 @@ export async function POST(request: Request, { params }: RouteContext) {
 
   const serviceClient = await createServiceClient();
 
-  // Busca o payment e valida estado atual
+  // Valida que o payment existe, eh pix, e pega o user_id
   const { data: payment, error: fetchError } = await serviceClient
     .from("payments")
     .select("id, user_id, status, payment_method")
@@ -34,13 +34,6 @@ export async function POST(request: Request, { params }: RouteContext) {
     return Response.json({ error: "Pagamento nao encontrado" }, { status: 404 });
   }
 
-  if (payment.status === "succeeded") {
-    return Response.json(
-      { error: "Pagamento ja confirmado" },
-      { status: 409 }
-    );
-  }
-
   if (payment.payment_method !== "pix") {
     return Response.json(
       { error: "Apenas pagamentos Pix podem ser confirmados manualmente" },
@@ -48,20 +41,32 @@ export async function POST(request: Request, { params }: RouteContext) {
     );
   }
 
-  // Atualiza status
-  const { error: updateError } = await serviceClient
+  // Update atomico: so atualiza se ainda esta pending
+  // Isso previne double-confirm em cliques simultaneos
+  const { data: updated, error: updateError } = await serviceClient
     .from("payments")
     .update({
       status: "succeeded",
       completed_at: new Date().toISOString(),
     })
-    .eq("id", paymentId);
+    .eq("id", paymentId)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
 
   if (updateError) {
     console.error("Erro ao atualizar payment:", updateError);
     return Response.json(
       { error: "Erro ao confirmar pagamento" },
       { status: 500 }
+    );
+  }
+
+  if (!updated) {
+    // Ninguem atualizado = ja tinha sido confirmado entre o SELECT e o UPDATE
+    return Response.json(
+      { error: "Pagamento ja confirmado" },
+      { status: 409 }
     );
   }
 

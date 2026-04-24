@@ -94,7 +94,6 @@ function PagamentoContent() {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [justPaidKeys, setJustPaidKeys] = useState<Set<string>>(new Set());
   const [successBanner, setSuccessBanner] = useState<string | null>(null);
-  const [, setPaymentMethod] = useState<"card" | "pix" | null>(null);
   const [pixData, setPixData] = useState<{
     brCode: string;
     qrDataUrl: string;
@@ -251,7 +250,6 @@ function PagamentoContent() {
 
     setProcessando(true);
     setErro(null);
-    setPaymentMethod(method);
 
     try {
       const payload = {

@@ -11,13 +11,15 @@ export interface PaymentItem {
 
 /**
  * Cria os registros de payment_items no banco.
- * Compartilhado entre webhook Stripe, create-pix e test-mode.
+ * Retorna { ok: true } em sucesso, { ok: false, error } em falha.
+ * Callers DEVEM checar o retorno — falha silenciosa causa payment fantasma
+ * (status=succeeded mas sem items = nenhum item do usuario marca como pago).
  */
 export async function criarPaymentItems(
   supabase: SupabaseClient,
   paymentId: string,
   items: PaymentItem[]
-) {
+): Promise<{ ok: true } | { ok: false; error: string }> {
   const paymentItemsToInsert = items.map((item) => ({
     payment_id: paymentId,
     item_type: item.type,
@@ -31,8 +33,10 @@ export async function criarPaymentItems(
     .insert(paymentItemsToInsert);
 
   if (error) {
-    console.error("Erro ao criar payment_items:", error);
+    console.error("Erro ao criar payment_items:", { paymentId, error });
+    return { ok: false, error: error.message };
   }
+  return { ok: true };
 }
 
 /**

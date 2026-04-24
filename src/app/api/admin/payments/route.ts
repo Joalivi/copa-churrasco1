@@ -12,6 +12,11 @@ export async function GET(request: Request) {
 
   const serviceClient = await createServiceClient();
 
+  // Filtrar: mostrar os ultimos 30 dias de Pix (evita lista inchar com
+  // pending abandonados ou confirmados antigos).
+  const janelaDias = 30;
+  const desde = new Date(Date.now() - janelaDias * 24 * 60 * 60 * 1000).toISOString();
+
   const { data, error } = await serviceClient
     .from("payments")
     .select(
@@ -27,7 +32,9 @@ export async function GET(request: Request) {
        payment_items(id, item_type, item_id, description, amount)`
     )
     .eq("payment_method", "pix")
-    .order("created_at", { ascending: false });
+    .gte("created_at", desde)
+    .order("created_at", { ascending: false })
+    .limit(200);
 
   if (error) {
     console.error("Erro ao buscar payments:", error);
