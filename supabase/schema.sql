@@ -150,6 +150,60 @@ ALTER TABLE admin_config ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "admin_config_select" ON admin_config FOR SELECT USING (true);
 
 -- ============================================
+-- RPC FUNCTIONS
+-- ============================================
+
+-- Cria payment + payment_items atomicamente. Usado por create-session e
+-- create-pix pra evitar orphan payments caso o processo morra entre os
+-- dois inserts.
+CREATE OR REPLACE FUNCTION create_pending_payment(
+  p_user_id UUID,
+  p_amount NUMERIC,
+  p_method TEXT,
+  p_items JSONB,
+  p_pix_br_code TEXT DEFAULT NULL,
+  p_pix_txid TEXT DEFAULT NULL
+) RETURNS UUID AS $$
+DECLARE
+  v_payment_id UUID;
+BEGIN
+  IF p_method NOT IN ('card', 'pix') THEN
+    RAISE EXCEPTION 'invalid payment_method: %', p_method;
+  END IF;
+  IF p_amount <= 0 THEN
+    RAISE EXCEPTION 'amount must be positive: %', p_amount;
+  END IF;
+  IF jsonb_array_length(p_items) = 0 THEN
+    RAISE EXCEPTION 'items array cannot be empty';
+  END IF;
+
+  INSERT INTO payments (
+    user_id, amount, payment_method, status, pix_br_code, pix_txid
+  )
+  VALUES (
+    p_user_id, p_amount, p_method, 'pending', p_pix_br_code, p_pix_txid
+  )
+  RETURNING id INTO v_payment_id;
+
+  INSERT INTO payment_items (
+    payment_id, item_type, item_id, description, amount
+  )
+  SELECT
+    v_payment_id,
+    item->>'type',
+    CASE WHEN item->>'id' = '' OR item->>'id' IS NULL
+         THEN NULL
+         ELSE (item->>'id')::uuid
+    END,
+    item->>'description',
+    (item->>'amount')::numeric
+  FROM jsonb_array_elements(p_items) AS item;
+
+  RETURN v_payment_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================
 -- SEED DATA
 -- ============================================
 

@@ -71,43 +71,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // Validar limites de tickets por usuário
-  const { data: existingTickets, error: ticketsError } = await supabase
-    .from("bolao_tickets")
-    .select("id, home_score, away_score")
-    .eq("user_id", user_id);
-
-  if (ticketsError) {
-    return Response.json(
-      { error: "Erro ao verificar palpites existentes" },
-      { status: 500 }
-    );
-  }
-
-  const userTickets = existingTickets || [];
-
-  // Max 10 tickets total por usuário
-  if (userTickets.length >= 10) {
-    return Response.json(
-      { error: "Limite de 10 palpites por usuário atingido" },
-      { status: 409 }
-    );
-  }
-
-  // Max 5 tickets por combinação de placar
-  const sameScoreCount = userTickets.filter(
-    (t) => t.home_score === home_score && t.away_score === away_score
-  ).length;
-
-  if (sameScoreCount >= 5) {
-    return Response.json(
-      {
-        error: `Limite de 5 palpites para o placar ${home_score}x${away_score} atingido`,
-      },
-      { status: 409 }
-    );
-  }
-
   const { data, error } = await supabase
     .from("bolao_tickets")
     .insert({

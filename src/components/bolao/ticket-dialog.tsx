@@ -37,7 +37,7 @@ export function TicketDialog({
     if (!userId || loading) return;
     setLoading(true);
     try {
-      let allOk = true;
+      let errorMsg: string | null = null;
       for (let i = 0; i < quantity; i++) {
         const res = await fetch("/api/bolao", {
           method: "POST",
@@ -48,16 +48,26 @@ export function TicketDialog({
             away_score: awayScore,
           }),
         });
-        if (!res.ok) { allOk = false; break; }
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          errorMsg = err.error || `Erro ao registrar palpite (status ${res.status})`;
+          break;
+        }
       }
-      if (allOk) {
+
+      if (errorMsg) {
+        // Mantem dialog aberto, user pode ajustar ou fechar manualmente
+        setToastMsg(`⚠️ ${errorMsg}`);
+      } else {
         onPurchase();
         setToastMsg(
           `🎯 Palpite ${homeScore}x${awayScore} registrado! ${quantity > 1 ? `${quantity} tickets — ` : ""}${formatCurrency(totalCost)} adicionado ao extrato.`
         );
-        // Close after toast is visible
-        setTimeout(onClose, 2000);
+        // Fecha o dialog depois do toast aparecer
+        setTimeout(onClose, 1500);
       }
+    } catch {
+      setToastMsg("⚠️ Erro de conexao. Tente novamente.");
     } finally {
       setLoading(false);
     }
@@ -184,8 +194,8 @@ export function TicketDialog({
         {toastMsg && (
           <PendingToast
             message={toastMsg}
-            onDismiss={() => { setToastMsg(null); onClose(); }}
-            durationMs={2000}
+            onDismiss={() => setToastMsg(null)}
+            durationMs={2500}
           />
         )}
       </div>
