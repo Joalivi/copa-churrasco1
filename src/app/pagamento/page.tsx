@@ -793,20 +793,28 @@ function PagamentoContent() {
           </div>
         )}
 
-        {/* Change D: Histórico de Pagamentos */}
-        {summary.payments.length > 0 && (
-          <details className="group">
-            <summary className="list-none cursor-pointer">
-              <div className="flex items-center justify-between card py-3 hover:bg-zinc-50 transition-colors">
-                <span className="text-sm font-bold text-blue">Histórico de Pagamentos</span>
-                <span className="text-zinc-400 text-xs group-open:rotate-180 transition-transform">▼</span>
+        {/* Histórico de Pagamentos — mostra apenas pagamentos finalizados
+            (succeeded ou failed). Pendentes ficam escondidos pra evitar
+            poluir a lista com tentativas / previews de Pix nao pagos. */}
+        {(() => {
+          const historico = summary.payments.filter(
+            (p) => p.status !== "pending"
+          );
+          if (historico.length === 0) return null;
+          return (
+            <details className="group">
+              <summary className="list-none cursor-pointer">
+                <div className="flex items-center justify-between card py-3 hover:bg-zinc-50 transition-colors">
+                  <span className="text-sm font-bold text-blue">Histórico de Pagamentos</span>
+                  <span className="text-zinc-400 text-xs group-open:rotate-180 transition-transform">▼</span>
+                </div>
+              </summary>
+              <div className="mt-2">
+                <PaymentHistory payments={historico} />
               </div>
-            </summary>
-            <div className="mt-2">
-              <PaymentHistory payments={summary.payments} />
-            </div>
-          </details>
-        )}
+            </details>
+          );
+        })()}
       </div>
     </PageContainer>
   );

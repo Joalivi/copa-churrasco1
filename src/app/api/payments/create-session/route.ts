@@ -95,14 +95,18 @@ export async function POST(request: Request) {
   }));
 
   try {
-    // 4. Criar sessao de checkout no Stripe (Embedded, apenas cartao)
+    // 4. Criar sessao de checkout no Stripe (Embedded).
+    // payment_method_types NAO eh setado — com isso o Stripe usa
+    // automaticamente os metodos que voce ativou no Dashboard
+    // (Settings → Payment methods): cartao, Apple Pay, Google Pay, Link
+    // etc, decidindo qual mostrar baseado no device/browser do user.
+    // Ativar um novo metodo no futuro nao exige mudanca de codigo.
     const session = await stripe.checkout.sessions.create({
       ui_mode: "embedded_page",
       redirect_on_completion: "if_required",
       line_items: lineItems,
       mode: "payment",
       currency: "brl",
-      payment_method_types: ["card"],
       metadata: {
         userId,
         items: JSON.stringify(
