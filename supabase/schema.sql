@@ -105,8 +105,11 @@ CREATE INDEX idx_activity_checkins_activity ON activity_checkins(activity_id);
 CREATE INDEX idx_bolao_tickets_user ON bolao_tickets(user_id);
 CREATE INDEX idx_payments_user ON payments(user_id);
 CREATE INDEX idx_payments_status ON payments(status);
-CREATE UNIQUE INDEX idx_payments_pix_txid ON payments(pix_txid) WHERE pix_txid IS NOT NULL;
-CREATE UNIQUE INDEX idx_payments_stripe_session_id ON payments(stripe_session_id) WHERE stripe_session_id IS NOT NULL;
+-- Nao usar partial unique (WHERE col IS NOT NULL) porque PostgREST nao
+-- resolve onConflict com esse tipo de index. Postgres aceita multiplos
+-- NULLs em UNIQUE normal (NULLS DISTINCT default).
+CREATE UNIQUE INDEX idx_payments_pix_txid ON payments(pix_txid);
+CREATE UNIQUE INDEX idx_payments_stripe_session_id ON payments(stripe_session_id);
 CREATE INDEX idx_payment_items_payment ON payment_items(payment_id);
 CREATE INDEX idx_users_status ON users(status);
 
