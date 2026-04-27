@@ -1,7 +1,7 @@
 "use client";
 
 import { Suspense, useEffect, useState, useCallback, useMemo } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   EmbeddedCheckoutProvider,
   EmbeddedCheckout,
@@ -12,7 +12,6 @@ import { formatCurrency } from "@/lib/utils";
 import { PaymentHistory } from "@/components/pagamento/payment-history";
 import { PhaseBar } from "@/components/layout/phase-bar";
 import { invalidateBalanceCache } from "@/hooks/use-user-balance";
-import { createClient } from "@/lib/supabase/client";
 import { getStripe } from "@/lib/stripe-client";
 import { PixQRDialog } from "@/components/payment/pix-qr-dialog";
 
@@ -84,7 +83,6 @@ interface EventStatus {
 function PagamentoContent() {
   const { userId, userName, isLoading: userLoading } = useCurrentUser();
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   const [summary, setSummary] = useState<UserSummary | null>(null);
   const [eventStatus, setEventStatus] = useState<"open" | "closed">("open");
@@ -394,26 +392,9 @@ function PagamentoContent() {
     <PageContainer>
       <div className="flex flex-col gap-5">
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Pagamento</h1>
-            <p className="text-sm text-zinc-500 mt-1">Olá, {nomeUsuario}!</p>
-          </div>
-          <button
-            onClick={async () => {
-              localStorage.removeItem("copa_user_id");
-              localStorage.removeItem("copa_user_name");
-              invalidateBalanceCache();
-              try {
-                const supabase = createClient();
-                await supabase.auth.signOut();
-              } catch {}
-              router.push("/confirmar");
-            }}
-            className="text-xs text-zinc-400 hover:text-red-500 transition-colors px-2 py-1 rounded-lg hover:bg-red-50"
-          >
-            Sair
-          </button>
+        <div>
+          <h1 className="text-2xl font-bold">Pagamento</h1>
+          <p className="text-sm text-zinc-500 mt-1">Olá, {nomeUsuario}!</p>
         </div>
 
         {/* Banner de sucesso pós-pagamento */}

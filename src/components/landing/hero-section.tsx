@@ -16,8 +16,18 @@ export default function HeroSection() {
 
     // Fetch user status from API
     fetch(`/api/user-summary?user_id=${userId}`)
-      .then((res) => (res.ok ? res.json() : null))
+      .then((res) => {
+        // 404 = sessao orfa (user_id no localStorage nao existe mais).
+        // SessionGuard global vai redirecionar pra /confirmar?expired=1, mas
+        // marcamos como "guest" pra evitar flicker mostrando "Pagar Aviso".
+        if (res.status === 404) return { __orphan: true } as const;
+        return res.ok ? res.json() : null;
+      })
       .then((data) => {
+        if (data && "__orphan" in data) {
+          setUserStatus("guest");
+          return;
+        }
         if (data?.user?.status === "confirmed") {
           setUserStatus("confirmed");
         } else {

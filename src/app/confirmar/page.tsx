@@ -1,5 +1,7 @@
+import { Suspense } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { CheckinForm } from "@/components/attendees/checkin-form";
+import { ExpiredBanner } from "@/components/layout/expired-banner";
 
 export const metadata = {
   title: "Confirmar Presenca | Churras da Copa 2026",
@@ -10,6 +12,9 @@ export default function ConfirmarPage() {
   return (
     <PageContainer>
       <div className="space-y-6">
+        <Suspense fallback={null}>
+          <ExpiredBanner />
+        </Suspense>
         {/* Header */}
         <div className="text-center space-y-2">
           <span className="text-4xl" role="img" aria-label="Churrasco">
