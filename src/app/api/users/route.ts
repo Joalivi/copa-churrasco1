@@ -76,7 +76,38 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     if (error.code === "23505") {
-      return NextResponse.json({ error: "Usuario ja cadastrado" }, { status: 409 });
+      // Conflito de unique constraint (CPF ou supabase_auth_id ja existem).
+      // Recupera sessao em vez de bloquear: usuario que perdeu localStorage
+      // (limpou navegador, trocou celular) consegue reentrar com mesmo CPF.
+      // Espelha comportamento do auth/callback do Google OAuth.
+      if (cpf && typeof cpf === "string" && cpf.trim().length > 0) {
+        const { data: existing, error: lookupError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("cpf", cpf.trim())
+          .single();
+
+        if (lookupError || !existing) {
+          console.error("Erro ao recuperar usuario por CPF:", lookupError);
+          return NextResponse.json(
+            { error: "Erro ao recuperar cadastro" },
+            { status: 500 }
+          );
+        }
+
+        return NextResponse.json(
+          { ...existing, recovered: true },
+          { status: 200 }
+        );
+      }
+
+      // Conflito sem CPF (cenario improvavel — cadastro manual sempre tem CPF
+      // e Google OAuth usa /auth/callback diretamente). Defesa.
+      console.error("Conflito 23505 sem CPF para recuperar:", error);
+      return NextResponse.json(
+        { error: "Cadastro duplicado" },
+        { status: 409 }
+      );
     }
     console.error("Users POST error:", error);
     return NextResponse.json({ error: "Erro ao cadastrar usuario" }, { status: 500 });

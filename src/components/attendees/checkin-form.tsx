@@ -148,6 +148,13 @@ export function CheckinForm() {
 
   // Se acabou de se cadastrar, mostrar mensagem de sucesso
   if (createdUser) {
+    // API retorna `recovered: true` quando 23505 (CPF ja existia) — usuario
+    // perdeu localStorage e reentrou. Diferencia UX entre cadastro novo e
+    // recuperacao pra deixar claro o que aconteceu.
+    const isRecovered =
+      (createdUser as User & { recovered?: boolean }).recovered === true;
+    const isAlreadyConfirmed = createdUser.status === "confirmed";
+
     return (
       <div className="card text-center space-y-4 animate-scale-in">
         <div className="w-16 h-16 mx-auto rounded-full bg-blue/10 flex items-center justify-center">
@@ -169,7 +176,11 @@ export function CheckinForm() {
         </div>
 
         <h2 className="text-xl font-bold text-blue">
-          Cadastro realizado!
+          {isRecovered
+            ? isAlreadyConfirmed
+              ? "Bem-vindo de volta!"
+              : "Sessao recuperada!"
+            : "Cadastro realizado!"}
         </h2>
 
         <div className="flex items-center justify-center gap-3">
@@ -195,12 +206,20 @@ export function CheckinForm() {
           </div>
         </div>
 
-        <div className="bg-yellow/10 border border-yellow/30 rounded-xl p-4 text-sm">
-          <p>
-            Para aparecer na lista de confirmados, pague o aviso da chacara{" "}
-            <strong>(R$35)</strong>.
-          </p>
-        </div>
+        {isAlreadyConfirmed ? (
+          <div className="bg-green/10 border border-green/30 rounded-xl p-4 text-sm">
+            <p>Sua presenca ja esta confirmada. Bom evento!</p>
+          </div>
+        ) : (
+          <div className="bg-yellow/10 border border-yellow/30 rounded-xl p-4 text-sm">
+            <p>
+              {isRecovered
+                ? "Continue de onde parou: pague o aviso da chacara"
+                : "Para aparecer na lista de confirmados, pague o aviso da chacara"}{" "}
+              <strong>(R$35)</strong>.
+            </p>
+          </div>
+        )}
 
         <div className="flex flex-col gap-3">
           <a href="/pagamento" className="btn-primary block text-center">
