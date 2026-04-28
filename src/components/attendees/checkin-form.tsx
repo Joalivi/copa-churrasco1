@@ -38,6 +38,12 @@ export function CheckinForm() {
   const [createdUser, setCreatedUser] = useState<User | null>(null);
   const [error, setError] = useState<string | null>(null);
 
+  // Estados do fluxo "Ja tenho conta? Entrar com CPF"
+  const [recoveryCpf, setRecoveryCpf] = useState("");
+  const [recoveryCpfError, setRecoveryCpfError] = useState<string | null>(null);
+  const [recoveryError, setRecoveryError] = useState<string | null>(null);
+  const [recoveryLoading, setRecoveryLoading] = useState(false);
+
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Debounce para buscar avatar do Instagram
@@ -123,6 +129,51 @@ export function CheckinForm() {
 
   const [googleLoading, setGoogleLoading] = useState(false);
   const [showManualForm, setShowManualForm] = useState(false);
+  const [showRecoveryForm, setShowRecoveryForm] = useState(false);
+
+  const handleRecoverySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setRecoveryError(null);
+    setRecoveryCpfError(null);
+
+    if (!recoveryCpf.trim()) {
+      setRecoveryCpfError("CPF e obrigatorio.");
+      return;
+    }
+
+    if (!isValidCPF(recoveryCpf)) {
+      setRecoveryCpfError("CPF invalido. Verifique o numero digitado.");
+      return;
+    }
+
+    setRecoveryLoading(true);
+
+    try {
+      const response = await fetch("/api/users/recover", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ cpf: recoveryCpf.trim() }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        // 404 = CPF nao cadastrado. Mensagem amigavel sugere fluxo de cadastro.
+        throw new Error(data.error || "Erro ao recuperar conta.");
+      }
+
+      // Sucesso: reusa a mesma tela de "createdUser" (ja diferencia
+      // recovered + status pra mostrar "Bem-vindo de volta!" / "Sessao recuperada!")
+      setCreatedUser(data as User);
+      setUser(data.id, data.name);
+    } catch (err) {
+      setRecoveryError(
+        err instanceof Error ? err.message : "Erro ao recuperar conta."
+      );
+    } finally {
+      setRecoveryLoading(false);
+    }
+  };
 
   const handleGoogleLogin = async () => {
     setGoogleLoading(true);
@@ -504,6 +555,120 @@ export function CheckinForm() {
             className="btn-primary w-full text-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? "Confirmando..." : "Confirmar Presenca"}
+          </button>
+        </form>
+      </div>
+
+      {/* Botao para expandir recuperacao por CPF (retornante sem Google) */}
+      <button
+        type="button"
+        onClick={() => setShowRecoveryForm(!showRecoveryForm)}
+        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl border border-foreground/10 bg-zinc-50 hover:bg-zinc-100 transition-all duration-200 text-sm text-zinc-600"
+      >
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+          <polyline points="10 17 15 12 10 7" />
+          <line x1="15" y1="12" x2="3" y2="12" />
+        </svg>
+        <span>Ja tenho conta? Entrar com CPF</span>
+        <svg
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`transition-transform duration-300 ${
+            showRecoveryForm ? "rotate-180" : ""
+          }`}
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+
+      {/* Form de recuperacao colapsavel */}
+      <div
+        className={`overflow-hidden transition-all duration-300 ${
+          showRecoveryForm ? "max-h-[400px] opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <form
+          onSubmit={handleRecoverySubmit}
+          className="space-y-4 pt-1 px-4 py-4 rounded-xl bg-blue/[0.03] border border-blue/10"
+        >
+          <p className="text-xs text-zinc-600 leading-relaxed">
+            Use o mesmo CPF do cadastro anterior pra recuperar sua sessao —
+            seus pagamentos e atividades voltam intactos.
+          </p>
+
+          {/* CPF */}
+          <div className="space-y-1.5">
+            <label
+              htmlFor="recovery-cpf"
+              className="block text-sm font-medium"
+            >
+              CPF
+            </label>
+            <input
+              id="recovery-cpf"
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="000.000.000-00"
+              value={recoveryCpf}
+              onChange={(e) => {
+                setRecoveryCpfError(null);
+                setRecoveryError(null);
+                setRecoveryCpf(maskCPF(e.target.value));
+              }}
+              maxLength={14}
+              className={`w-full px-4 py-3 rounded-xl border bg-white focus:outline-none focus:ring-2 focus:ring-blue/40 focus:border-blue transition-colors input-focus ${
+                recoveryCpfError
+                  ? "border-red-400 focus:ring-red-200"
+                  : "border-foreground/15"
+              }`}
+            />
+            {recoveryCpfError && (
+              <p className="text-xs text-red-500 flex items-center gap-1">
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                >
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" />
+                </svg>
+                {recoveryCpfError}
+              </p>
+            )}
+          </div>
+
+          {/* Erro do servidor (404 / 500) */}
+          {recoveryError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-3 text-xs">
+              {recoveryError}
+            </div>
+          )}
+
+          {/* Botao */}
+          <button
+            type="submit"
+            disabled={recoveryLoading}
+            className="w-full py-3 px-4 rounded-xl bg-blue text-white font-semibold hover:bg-blue/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {recoveryLoading ? "Recuperando..." : "Recuperar conta"}
           </button>
         </form>
       </div>
