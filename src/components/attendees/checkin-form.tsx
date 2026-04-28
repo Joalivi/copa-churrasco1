@@ -580,7 +580,7 @@ export function CheckinForm() {
           <polyline points="10 17 15 12 10 7" />
           <line x1="15" y1="12" x2="3" y2="12" />
         </svg>
-        <span>Ja tenho conta? Entrar com CPF</span>
+        <span>Já tem conta? Entrar com CPF</span>
         <svg
           width="14"
           height="14"
