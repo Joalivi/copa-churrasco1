@@ -6,6 +6,21 @@ import { Activity } from "@/types";
 import { PendingToast } from "@/components/layout/pending-toast";
 import { formatCurrency, calculateBottleCost, calcChopp, cn } from "@/lib/utils";
 
+// Disclaimer informacional sobre o uso do dinheiro arrecadado em cada
+// atividade. Texto fixo (regra do evento) — keyed por activity.name pra
+// reaproveitar o lookup que o resto do componente ja faz (ex: linhas que
+// tratam Churrasco/Chopp). Se virar muitas atividades ou precisar editar
+// pelo admin, mover pra coluna no banco.
+const PRIZE_INFO: Record<string, string> = {
+  "Bomba Patch":
+    "Valor arrecadado vira premio: 70% para o 1º lugar e 30% para o 2º lugar.",
+  FIFA: "Valor arrecadado vira premio: 70% para o 1º lugar e 30% para o 2º lugar.",
+  Truco:
+    "Disputa em duplas. Valor arrecadado vira premio: 70% para a dupla campea e 30% para a dupla vice.",
+  "Beer Pong":
+    "Valor arrecadado e usado na compra das bebidas do jogo.",
+};
+
 interface Participant {
   id: string;
   name: string;
@@ -131,6 +146,19 @@ export function ActivityCard({
             <p className="text-sm text-zinc-500 mt-0.5">
               {activity.description}
             </p>
+          )}
+
+          {/* Disclaimer informacional: uso do dinheiro arrecadado.
+              Bloco azul destacado pra diferenciar da descricao "fluff". */}
+          {PRIZE_INFO[activity.name] && (
+            <div className="mt-2 bg-blue/10 border border-blue/20 rounded-xl px-3 py-2 flex items-start gap-2">
+              <span className="text-base shrink-0" aria-hidden="true">
+                {activity.name === "Beer Pong" ? "🍺" : "🏆"}
+              </span>
+              <p className="text-xs text-blue/90 leading-relaxed">
+                {PRIZE_INFO[activity.name]}
+              </p>
+            </div>
           )}
 
           {/* Info estimativa — Churrasco */}
