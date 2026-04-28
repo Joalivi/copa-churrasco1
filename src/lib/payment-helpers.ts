@@ -110,7 +110,13 @@ export async function calculateServerAmount(
         .select("id", { count: "exact", head: true })
         .eq("status", "confirmed");
 
-      const totalConfirmed = confirmedCount || 1;
+      const totalConfirmed = confirmedCount ?? 0;
+      if (totalConfirmed === 0) {
+        // Sem confirmados, rateio nao eh pagavel.
+        // UI ja esconde o item (totalExpenseShare > 0 gate); servidor defende
+        // contra request malicioso ou cliente com cache stale.
+        return 0;
+      }
       const allExpenses = expenses || [];
 
       const splitExpenses = allExpenses.filter((e) => e.category !== "aluguel");
@@ -119,7 +125,6 @@ export async function calculateServerAmount(
         0
       );
       const expenseShare = totalSplitExpenses / totalConfirmed;
-
       const rentalShare = TOTAL_RENTAL / totalConfirmed - AVISO_PRICE;
 
       return Math.round((expenseShare + rentalShare) * 100) / 100;

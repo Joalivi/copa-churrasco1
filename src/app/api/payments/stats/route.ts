@@ -27,7 +27,7 @@ export async function GET() {
       .eq("status", "succeeded"),
   ]);
 
-  const confirmedCount = confirmedRes.count || 1;
+  const confirmedCount = confirmedRes.count ?? 0;
   const expenses = expensesRes.data || [];
   const activities = activitiesRes.data || [];
   const allCheckins = allCheckinsRes.data || [];

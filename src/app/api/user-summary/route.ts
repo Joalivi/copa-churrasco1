@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
   const allCheckins = allCheckinsRes.data || [];
   const tickets = ticketsRes.data || [];
   const expenses = expensesRes.data || [];
-  const confirmedCount = confirmedRes.count || 1;
+  const confirmedCount = confirmedRes.count ?? 0;
   const allPayments = paymentsRes.data || [];
   // Agregacoes financeiras consideram apenas pagamentos confirmados
   const succeededPayments = allPayments.filter(
