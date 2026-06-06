@@ -1,9 +1,11 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState, useCallback } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { formatCurrency } from "@/lib/utils";
-import type { Expense } from "@/types";
+import { MEAT_PER_PERSON_KG } from "@/lib/constants";
+import type { Expense, MenuItem } from "@/types";
 
 // ─── Configuração de categorias ───────────────────────────────────────────────
 interface CategoryConfig {
@@ -51,25 +53,45 @@ function getCategoryConfig(category: string): CategoryConfig {
 }
 
 // ─── Tipos ────────────────────────────────────────────────────────────────────
+interface CollectedBreakdown {
+  aviso: number;
+  activity: number;
+  bolao: number;
+  expense_share: number;
+  outros: number;
+}
+
 interface FinancialStats {
   totalExpenses: number;
   totalCollected: number;
+  collected: CollectedBreakdown;
   pendingBalance: number;
   perCapita: number;
   confirmedCount: number;
 }
 
+const EMPTY_COLLECTED: CollectedBreakdown = {
+  aviso: 0,
+  activity: 0,
+  bolao: 0,
+  expense_share: 0,
+  outros: 0,
+};
+
 // ─── Componente principal ─────────────────────────────────────────────────────
 export default function FinanceiroPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [stats, setStats] = useState<FinancialStats | null>(null);
+  const [menu, setMenu] = useState<MenuItem[]>([]);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     try {
-      const [expensesRes, statsRes] = await Promise.all([
+      const [expensesRes, statsRes, menuRes] = await Promise.all([
         fetch("/api/expenses"),
         fetch("/api/payments/stats"),
+        fetch("/api/menu"),
       ]);
 
       if (expensesRes.ok) {
@@ -82,10 +104,16 @@ export default function FinanceiroPage() {
         setStats({
           totalExpenses: data.totalExpenses ?? 0,
           totalCollected: data.totalCollected ?? 0,
+          collected: data.collected ?? EMPTY_COLLECTED,
           pendingBalance: data.pendingBalance ?? 0,
           perCapita: data.perCapita ?? 0,
           confirmedCount: data.confirmedCount ?? 0,
         });
+      }
+
+      if (menuRes.ok) {
+        const data = await menuRes.json();
+        setMenu(Array.isArray(data.items) ? data.items : []);
       }
     } finally {
       setLoading(false);
@@ -153,6 +181,121 @@ export default function FinanceiroPage() {
           </div>
         )}
 
+        {/* Composição do arrecadado — explica de onde veio o Total Arrecadado */}
+        {!loading && stats && stats.totalCollected > 0 && (
+          <div>
+            <h2 className="text-sm font-bold text-green mb-3">
+              Arrecadado por origem
+            </h2>
+            <div className="flex flex-col gap-2">
+              {[
+                { key: "aviso", label: "Aviso da Chácara", emoji: "🏠", value: stats.collected.aviso },
+                { key: "activity", label: "Atividades", emoji: "🎮", value: stats.collected.activity },
+                { key: "bolao", label: "Bolão", emoji: "🎯", value: stats.collected.bolao },
+                { key: "expense_share", label: "Rateio do aluguel", emoji: "🏡", value: stats.collected.expense_share },
+                { key: "outros", label: "Outros", emoji: "📦", value: stats.collected.outros },
+              ]
+                .filter((row) => row.value > 0)
+                .map((row) => (
+                  <div key={row.key} className="card flex items-center gap-3 py-3">
+                    <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center shrink-0 text-lg">
+                      {row.emoji}
+                    </div>
+                    <p className="flex-1 text-sm font-medium text-foreground">
+                      {row.label}
+                    </p>
+                    <p className="text-sm font-bold text-green shrink-0">
+                      {formatCurrency(row.value)}
+                    </p>
+                  </div>
+                ))}
+
+              {/* Total */}
+              <div className="card flex items-center justify-between border border-green/10 mt-1">
+                <p className="text-sm font-bold text-green">Total Arrecadado</p>
+                <p className="text-sm font-bold text-green">
+                  {formatCurrency(stats.totalCollected)}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Cardápio */}
+        {!loading && menu.length > 0 && (
+          <div>
+            <h2 className="text-sm font-bold text-amber-600 mb-3">🍽️ Cardápio</h2>
+            <div className="card flex flex-col gap-2 py-3">
+              {menu.map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2">
+                  <span className="text-sm text-foreground">{item.name}</span>
+                  {item.category && (
+                    <span className="text-[10px] px-2 py-0.5 bg-zinc-100 rounded-full text-zinc-500">
+                      {item.category}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Carnes compradas */}
+        {!loading && expenses.some((e) => e.category === "carne") && (
+          <div>
+            <h2 className="text-sm font-bold text-red-600 mb-3">
+              🥩 Carnes compradas
+            </h2>
+            <div className="flex flex-col gap-2">
+              {expenses
+                .filter((e) => e.category === "carne")
+                .map((expense) => {
+                  const receipt = expense.receipt_url;
+                  return (
+                    <div
+                      key={expense.id}
+                      className="card flex items-start gap-3 py-3"
+                    >
+                      {receipt ? (
+                        <button
+                          type="button"
+                          onClick={() => setLightboxUrl(receipt)}
+                          className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-zinc-200"
+                          title="Ver nota"
+                        >
+                          <Image
+                            src={receipt}
+                            alt="Nota"
+                            fill
+                            sizes="48px"
+                            className="object-cover"
+                          />
+                        </button>
+                      ) : (
+                        <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center shrink-0 text-lg">
+                          🥩
+                        </div>
+                      )}
+                      <p className="flex-1 text-sm font-medium text-foreground whitespace-pre-line break-words">
+                        {expense.description}
+                      </p>
+                      <p className="text-sm font-bold text-foreground shrink-0">
+                        {formatCurrency(expense.amount)}
+                      </p>
+                    </div>
+                  );
+                })}
+              {stats && stats.confirmedCount > 0 && (
+                <p className="text-[11px] text-zinc-400 px-1">
+                  Referência: ~{MEAT_PER_PERSON_KG} kg/pessoa → ≈{" "}
+                  {Math.round(MEAT_PER_PERSON_KG * stats.confirmedCount * 10) / 10}{" "}
+                  kg para {stats.confirmedCount} confirmados.
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Lista de despesas */}
         <div>
           <h2 className="text-sm font-bold text-blue mb-3">Despesas</h2>
@@ -183,38 +326,44 @@ export default function FinanceiroPage() {
             <div className="flex flex-col gap-2">
               {expenses.map((expense) => {
                 const cat = getCategoryConfig(expense.category);
+                const receipt = expense.receipt_url;
                 return (
                   <div
                     key={expense.id}
-                    className="card flex items-center gap-3 py-3 hover:shadow-lg transition-shadow duration-200"
+                    className="card flex items-start gap-3 py-3 hover:shadow-lg transition-shadow duration-200"
                   >
-                    {/* Ícone da categoria */}
-                    <div className="w-10 h-10 rounded-xl bg-zinc-100 flex items-center justify-center shrink-0 text-lg">
-                      {cat.emoji}
-                    </div>
-
-                    {/* Descrição + badge */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <p className="text-sm font-medium text-foreground truncate">
-                          {expense.description}
-                        </p>
-                        <span
-                          className={`shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full ${cat.bg} ${cat.text}`}
-                        >
-                          {cat.label}
-                        </span>
+                    {/* Foto da nota (ou ícone da categoria) */}
+                    {receipt ? (
+                      <button
+                        type="button"
+                        onClick={() => setLightboxUrl(receipt)}
+                        className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-zinc-200"
+                        title="Ver nota"
+                      >
+                        <Image
+                          src={receipt}
+                          alt="Nota"
+                          fill
+                          sizes="48px"
+                          className="object-cover"
+                        />
+                      </button>
+                    ) : (
+                      <div className="w-12 h-12 rounded-xl bg-zinc-100 flex items-center justify-center shrink-0 text-lg">
+                        {cat.emoji}
                       </div>
-                      {expense.receipt_url && (
-                        <a
-                          href={expense.receipt_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[10px] text-blue underline mt-0.5 inline-block"
-                        >
-                          Ver comprovante ↗
-                        </a>
-                      )}
+                    )}
+
+                    {/* Categoria + descrição (texto livre, multilinha) */}
+                    <div className="flex-1 min-w-0">
+                      <span
+                        className={`inline-block mb-1 text-[10px] font-medium px-2 py-0.5 rounded-full ${cat.bg} ${cat.text}`}
+                      >
+                        {cat.emoji} {cat.label}
+                      </span>
+                      <p className="text-sm font-medium text-foreground whitespace-pre-line break-words">
+                        {expense.description}
+                      </p>
                     </div>
 
                     {/* Valor */}
@@ -261,6 +410,29 @@ export default function FinanceiroPage() {
           )}
         </div>
       </div>
+
+      {/* Lightbox da nota */}
+      {lightboxUrl && (
+        <div
+          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-4"
+          onClick={() => setLightboxUrl(null)}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={lightboxUrl}
+            alt="Nota fiscal"
+            className="max-w-full max-h-[85vh] rounded-lg object-contain"
+          />
+          <button
+            type="button"
+            onClick={() => setLightboxUrl(null)}
+            className="absolute top-4 right-4 text-white text-3xl leading-none font-bold"
+            aria-label="Fechar"
+          >
+            ✕
+          </button>
+        </div>
+      )}
     </PageContainer>
   );
 }

@@ -38,10 +38,26 @@ export async function GET() {
   const totalExpenses = expenses.reduce((sum, e) => sum + e.amount, 0);
 
   // Total arrecadado (soma de todos os pagamentos succeeded, incluindo aviso)
+  // + composicao por origem (aviso, atividades, bolao, rateio) pra explicar o total
   let totalCollected = 0;
+  const collectedByType: Record<string, number> = {};
   for (const payment of allPayments) {
     totalCollected += payment.amount;
+    const items = (payment.payment_items || []) as Array<{
+      item_type: string;
+      amount: number;
+    }>;
+    if (items.length === 0) {
+      // Pagamento sem itens — atribui ao bucket "outros" pra nao sumir do total
+      collectedByType.outros = (collectedByType.outros || 0) + payment.amount;
+    } else {
+      for (const it of items) {
+        collectedByType[it.item_type] =
+          (collectedByType[it.item_type] || 0) + it.amount;
+      }
+    }
   }
+  const round2 = (n: number) => Math.round((n || 0) * 100) / 100;
 
   // Calcular total que cada pessoa deve (para saldo pendente)
   // Agrupar checkins por atividade para calcular custo por pessoa
@@ -121,6 +137,13 @@ export async function GET() {
   return Response.json({
     totalExpenses: Math.round(totalExpenses * 100) / 100,
     totalCollected: Math.round(totalCollected * 100) / 100,
+    collected: {
+      aviso: round2(collectedByType.aviso),
+      activity: round2(collectedByType.activity),
+      bolao: round2(collectedByType.bolao),
+      expense_share: round2(collectedByType.expense_share),
+      outros: round2(collectedByType.outros),
+    },
     totalOwed: Math.round(totalOwed * 100) / 100,
     pendingBalance: Math.round((totalOwed - totalCollected) * 100) / 100,
     confirmedCount,

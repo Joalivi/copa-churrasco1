@@ -141,6 +141,9 @@ function DespesasTab() {
   const [amount, setAmount] = useState("");
   const [category, setCategory] = useState("geral");
   const [splitAll, setSplitAll] = useState(true);
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState("");
 
   const fetchExpenses = useCallback(async () => {
     try {
@@ -158,6 +161,32 @@ function DespesasTab() {
     fetchExpenses();
   }, [fetchExpenses]);
 
+  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadError("");
+    setUploading(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const res = await fetch("/api/expenses/upload", {
+        method: "POST",
+        headers: { "x-admin-pin": getPin() || "" },
+        body: fd,
+      });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        setReceiptUrl(data.url);
+      } else {
+        setUploadError(data.error || "Falha no upload da imagem.");
+      }
+    } catch {
+      setUploadError("Falha no upload da imagem.");
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
     setSubmitting(true);
@@ -170,6 +199,7 @@ function DespesasTab() {
           amount: parseFloat(amount),
           category,
           split_among_all: splitAll,
+          receipt_url: receiptUrl,
         }),
       });
 
@@ -178,6 +208,7 @@ function DespesasTab() {
         setAmount("");
         setCategory("geral");
         setSplitAll(true);
+        setReceiptUrl(null);
         fetchExpenses();
       }
     } finally {
@@ -201,12 +232,13 @@ function DespesasTab() {
       <form onSubmit={handleAdd} className="card space-y-3">
         <h3 className="font-semibold text-sm text-blue">Nova Despesa</h3>
 
-        <input
-          type="text"
-          placeholder="Descricao"
+        <textarea
+          placeholder="O que foi comprado (um item por linha, ou texto livre)"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="w-full border border-zinc-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green"
+          rows={4}
+          maxLength={1000}
+          className="w-full border border-zinc-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green resize-y"
           required
         />
 
@@ -243,9 +275,46 @@ function DespesasTab() {
           Dividir entre todos os confirmados
         </label>
 
+        {/* Foto da nota */}
+        <div className="space-y-2">
+          <label className="block text-xs font-medium text-zinc-600">
+            Foto da nota (opcional)
+          </label>
+          {receiptUrl ? (
+            <div className="flex items-center gap-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={receiptUrl}
+                alt="Nota"
+                className="w-16 h-16 object-cover rounded-lg border border-zinc-200"
+              />
+              <button
+                type="button"
+                onClick={() => setReceiptUrl(null)}
+                className="text-xs text-red-500 font-medium"
+              >
+                Remover
+              </button>
+            </div>
+          ) : (
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileSelect}
+              disabled={uploading}
+              className="block w-full text-xs text-zinc-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-green file:text-white file:text-xs file:cursor-pointer disabled:opacity-50"
+            />
+          )}
+          {uploading && (
+            <p className="text-xs text-zinc-400">Subindo imagem...</p>
+          )}
+          {uploadError && <p className="text-xs text-red-500">{uploadError}</p>}
+        </div>
+
         <button
           type="submit"
-          disabled={submitting || !description || !amount}
+          disabled={submitting || uploading || !description || !amount}
           className="btn-primary w-full text-sm disabled:opacity-50"
         >
           {submitting ? "Adicionando..." : "Adicionar Despesa"}
@@ -308,6 +377,119 @@ function DespesasTab() {
             </div>
           ))}
       </div>
+
+      <CardapioEditor />
+    </div>
+  );
+}
+
+// ── Editor de Cardapio ───────────────────────────────────
+
+function CardapioEditor() {
+  const [items, setItems] = useState<{ name: string; category?: string }[]>([]);
+  const [newName, setNewName] = useState("");
+  const [newCat, setNewCat] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    fetch("/api/menu")
+      .then((r) => r.json())
+      .then((d) => setItems(Array.isArray(d.items) ? d.items : []))
+      .catch(() => {})
+      .finally(() => setLoading(false));
+  }, []);
+
+  async function save(next: { name: string; category?: string }[]) {
+    setSaving(true);
+    try {
+      const res = await fetch("/api/menu", {
+        method: "POST",
+        headers: adminHeaders(),
+        body: JSON.stringify({ items: next }),
+      });
+      if (res.ok) {
+        const d = await res.json();
+        setItems(Array.isArray(d.items) ? d.items : next);
+      }
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  function addItem(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newName.trim()) return;
+    const next = [
+      ...items,
+      { name: newName.trim(), ...(newCat.trim() ? { category: newCat.trim() } : {}) },
+    ];
+    setNewName("");
+    setNewCat("");
+    save(next);
+  }
+
+  function removeItem(idx: number) {
+    save(items.filter((_, i) => i !== idx));
+  }
+
+  return (
+    <div className="space-y-3 pt-4 mt-1 border-t border-zinc-200">
+      <h3 className="font-semibold text-sm text-blue">Cardapio ({items.length})</h3>
+
+      <form onSubmit={addItem} className="card space-y-2">
+        <input
+          type="text"
+          placeholder="Prato / item do cardapio"
+          value={newName}
+          onChange={(e) => setNewName(e.target.value)}
+          className="w-full border border-zinc-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green"
+        />
+        <input
+          type="text"
+          placeholder="Categoria (ex: carne, acompanhamento) — opcional"
+          value={newCat}
+          onChange={(e) => setNewCat(e.target.value)}
+          className="w-full border border-zinc-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green"
+        />
+        <button
+          type="submit"
+          disabled={saving || !newName.trim()}
+          className="btn-primary w-full text-sm disabled:opacity-50"
+        >
+          {saving ? "Salvando..." : "Adicionar ao cardapio"}
+        </button>
+      </form>
+
+      {loading ? (
+        <p className="text-xs text-zinc-400">Carregando cardapio...</p>
+      ) : items.length === 0 ? (
+        <p className="text-xs text-zinc-500">Cardapio vazio.</p>
+      ) : (
+        <div className="space-y-1.5">
+          {items.map((it, idx) => (
+            <div
+              key={idx}
+              className="card flex items-center justify-between gap-2 py-2"
+            >
+              <span className="text-sm">
+                {it.name}
+                {it.category && (
+                  <span className="ml-2 text-xs px-2 py-0.5 bg-zinc-100 rounded-full text-zinc-500">
+                    {it.category}
+                  </span>
+                )}
+              </span>
+              <button
+                onClick={() => removeItem(idx)}
+                className="text-red-500 text-xs font-medium shrink-0 p-1"
+              >
+                Remover
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

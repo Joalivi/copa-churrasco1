@@ -77,3 +77,9 @@ export interface PaymentItem {
   description: string;
   amount: number;
 }
+
+export interface MenuItem {
+  name: string;
+  category?: string;
+  note?: string;
+}
