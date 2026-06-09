@@ -41,8 +41,8 @@ function RateioBreakdown({
           key={i}
           className="text-[11px] text-zinc-500 flex justify-between gap-2"
         >
-          <span>{b.label}</span>
-          <span className="tabular-nums">{formatCurrency(b.perPerson)}</span>
+          <span className="truncate">{b.label}</span>
+          <span className="tabular-nums shrink-0">{formatCurrency(b.perPerson)}</span>
         </p>
       ))}
     </div>
@@ -210,7 +210,8 @@ function PagamentoContent() {
       const breakdown = [
         { label: "Aluguel (restante)", perPerson: summary.rental_share },
         ...(summary.expense_breakdown ?? []).map((e) => ({
-          label: e.description,
+          // so a 1a linha da descricao (texto livre pode ser multi-linha)
+          label: e.description.split("\n")[0].trim().slice(0, 40),
           perPerson: e.perPerson,
         })),
       ].filter((b) => b.perPerson > 0);
