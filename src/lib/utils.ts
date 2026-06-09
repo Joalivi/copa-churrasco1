@@ -1,4 +1,5 @@
 import { type ClassValue, clsx } from "clsx";
+import { CHOPP_PER_PERSON_L } from "@/lib/constants";
 
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
@@ -22,12 +23,12 @@ export function formatDate(date: string | Date): string {
 }
 
 /** Calcula barris de chopp necessarios.
- *  - 4L por pessoa
+ *  - CHOPP_PER_PERSON_L litros por pessoa
  *  - Barris de 30L ou 50L
  *  - Pode arredondar para baixo ate 20% da quantidade necessaria
  */
 export function calcChopp(people: number) {
-  const needed = people * 4;
+  const needed = people * CHOPP_PER_PERSON_L;
   const minAcceptable = needed * 0.8;
 
   let best = { barrels30: 0, barrels50: 0, total: 0, waste: Infinity };
