@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useEffect, useState, useCallback } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { formatCurrency, isImageUrl, ensureHttp } from "@/lib/utils";
-import { MEAT_PER_PERSON_KG } from "@/lib/constants";
 import type { Expense } from "@/types";
 
 // ─── Configuração de categorias ───────────────────────────────────────────────
@@ -210,74 +209,6 @@ export default function FinanceiroPage() {
                   {formatCurrency(stats.totalCollected)}
                 </p>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Carnes compradas */}
-        {!loading && expenses.some((e) => e.category === "carne") && (
-          <div>
-            <h2 className="text-sm font-bold text-red-600 mb-3">
-              🥩 Carnes compradas
-            </h2>
-            <div className="flex flex-col gap-2">
-              {expenses
-                .filter((e) => e.category === "carne")
-                .map((expense) => {
-                  const receipt = expense.receipt_url;
-                  return (
-                    <div
-                      key={expense.id}
-                      className="card flex items-start gap-3 py-3"
-                    >
-                      {receipt && isImageUrl(receipt) ? (
-                        <button
-                          type="button"
-                          onClick={() => setLightboxUrl(receipt)}
-                          className="relative w-12 h-12 rounded-xl overflow-hidden shrink-0 border border-zinc-200"
-                          title="Ver nota"
-                        >
-                          <Image
-                            src={receipt}
-                            alt="Nota"
-                            fill
-                            sizes="48px"
-                            className="object-cover"
-                          />
-                        </button>
-                      ) : (
-                        <div className="w-12 h-12 rounded-xl bg-red-100 flex items-center justify-center shrink-0 text-lg">
-                          🥩
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground whitespace-pre-line break-words">
-                          {expense.description}
-                        </p>
-                        {receipt && !isImageUrl(receipt) && (
-                          <a
-                            href={ensureHttp(receipt)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-[11px] text-blue underline mt-1 inline-block"
-                          >
-                            📄 Nota fiscal ↗
-                          </a>
-                        )}
-                      </div>
-                      <p className="text-sm font-bold text-foreground shrink-0">
-                        {formatCurrency(expense.amount)}
-                      </p>
-                    </div>
-                  );
-                })}
-              {stats && stats.confirmedCount > 0 && (
-                <p className="text-[11px] text-zinc-400 px-1">
-                  Referência: ~{MEAT_PER_PERSON_KG} kg/pessoa → ≈{" "}
-                  {Math.round(MEAT_PER_PERSON_KG * stats.confirmedCount * 10) / 10}{" "}
-                  kg para {stats.confirmedCount} confirmados.
-                </p>
-              )}
             </div>
           </div>
         )}
