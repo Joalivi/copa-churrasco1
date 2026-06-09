@@ -147,6 +147,15 @@ export async function GET(request: NextRequest) {
   const expenseShare =
     confirmedCount > 0 ? totalSplitExpenses / confirmedCount : 0;
 
+  // Composicao do rateio: cada despesa dividida, valor por pessoa
+  const expenseBreakdown = splitExpenses.map((e) => ({
+    description: e.description as string,
+    perPerson:
+      confirmedCount > 0
+        ? Math.round((e.amount / confirmedCount) * 100) / 100
+        : 0,
+  }));
+
   // Rateio do aluguel
   const rentalShare =
     confirmedCount > 0 ? TOTAL_RENTAL / confirmedCount - AVISO_PRICE : 0;
@@ -199,6 +208,7 @@ export async function GET(request: NextRequest) {
       cost: t.cost,
     })),
     expense_share: Math.round(expenseShare * 100) / 100,
+    expense_breakdown: expenseBreakdown,
     rental_share: Math.round(rentalShare * 100) / 100,
     total_activity_cost: Math.round(totalActivityCost * 100) / 100,
     bolao_total: bolaoTotal,
