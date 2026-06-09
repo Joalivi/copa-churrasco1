@@ -76,9 +76,9 @@ export function ActivityCard({
         return `~${formatCurrency(bottleCost)}/pessoa`;
       case "total_split": {
         if (activity.checkin_count === 0) return "Valor a definir";
-        // Churrasco: 500g/pessoa x R$40/kg = R$20/pessoa
+        // Churrasco: 600g/pessoa x R$50/kg = R$30/pessoa
         if (activity.name === "Churrasco") {
-          const perPerson = 0.5 * 40;
+          const perPerson = 0.6 * 50;
           return `~${formatCurrency(perPerson)}/pessoa`;
         }
         // Chopp: litros dos barris x R$12/L / checkins
@@ -164,15 +164,15 @@ export function ActivityCard({
           {/* Info estimativa — Churrasco */}
           {activity.name === "Churrasco" && activity.checkin_count > 0 && (() => {
             const count = activity.checkin_count;
-            const meatKg = count * 0.5;
-            const meatCost = meatKg * 40;
+            const meatKg = count * 0.6;
+            const meatCost = meatKg * 50;
             return (
               <div className="mt-2 bg-red-50/60 border border-red-100 rounded-xl px-3 py-2 space-y-1">
                 <p className="text-xs text-zinc-600">
-                  <span className="font-semibold">Carne total:</span> {meatKg.toFixed(1)}kg <span className="text-zinc-400">({count} x 500g)</span>
+                  <span className="font-semibold">Carne total:</span> {meatKg.toFixed(1)}kg <span className="text-zinc-400">({count} x 600g)</span>
                 </p>
                 <p className="text-xs text-zinc-600">
-                  <span className="font-semibold">Custo estimado:</span> {formatCurrency(meatCost)} <span className="text-zinc-400">({meatKg.toFixed(1)}kg x R$40)</span>
+                  <span className="font-semibold">Custo estimado:</span> {formatCurrency(meatCost)} <span className="text-zinc-400">({meatKg.toFixed(1)}kg x R$50)</span>
                 </p>
                 <p className="text-[10px] text-zinc-400">
                   Fechamento: {formatCurrency(meatCost / count)}/pessoa
