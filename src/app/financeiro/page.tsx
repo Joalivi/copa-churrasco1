@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 import { PageContainer } from "@/components/layout/page-container";
 import { formatCurrency } from "@/lib/utils";
 import { MEAT_PER_PERSON_KG } from "@/lib/constants";
-import type { Expense, MenuItem } from "@/types";
+import type { Expense } from "@/types";
 
 // ─── Configuração de categorias ───────────────────────────────────────────────
 interface CategoryConfig {
@@ -82,16 +82,14 @@ const EMPTY_COLLECTED: CollectedBreakdown = {
 export default function FinanceiroPage() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [stats, setStats] = useState<FinancialStats | null>(null);
-  const [menu, setMenu] = useState<MenuItem[]>([]);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
     try {
-      const [expensesRes, statsRes, menuRes] = await Promise.all([
+      const [expensesRes, statsRes] = await Promise.all([
         fetch("/api/expenses"),
         fetch("/api/payments/stats"),
-        fetch("/api/menu"),
       ]);
 
       if (expensesRes.ok) {
@@ -109,11 +107,6 @@ export default function FinanceiroPage() {
           perCapita: data.perCapita ?? 0,
           confirmedCount: data.confirmedCount ?? 0,
         });
-      }
-
-      if (menuRes.ok) {
-        const data = await menuRes.json();
-        setMenu(Array.isArray(data.items) ? data.items : []);
       }
     } finally {
       setLoading(false);
@@ -217,25 +210,6 @@ export default function FinanceiroPage() {
                   {formatCurrency(stats.totalCollected)}
                 </p>
               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Cardápio */}
-        {!loading && menu.length > 0 && (
-          <div>
-            <h2 className="text-sm font-bold text-amber-600 mb-3">🍽️ Cardápio</h2>
-            <div className="card flex flex-col gap-2 py-3">
-              {menu.map((item, idx) => (
-                <div key={idx} className="flex items-center gap-2">
-                  <span className="text-sm text-foreground">{item.name}</span>
-                  {item.category && (
-                    <span className="text-[10px] px-2 py-0.5 bg-zinc-100 rounded-full text-zinc-500">
-                      {item.category}
-                    </span>
-                  )}
-                </div>
-              ))}
             </div>
           </div>
         )}
