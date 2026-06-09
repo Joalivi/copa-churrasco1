@@ -1,4 +1,4 @@
-import { createClient } from "@/lib/supabase/server";
+import { createClient, createServiceClient } from "@/lib/supabase/server";
 import { NextRequest } from "next/server";
 
 const VALID_CATEGORIES = ["aluguel", "carne", "bebida", "descartavel", "geral"] as const;
@@ -52,9 +52,9 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (typeof description !== "string" || description.length > 255) {
+  if (typeof description !== "string" || description.length > 1000) {
     return Response.json(
-      { error: "description deve ter no maximo 255 caracteres" },
+      { error: "description deve ter no maximo 1000 caracteres" },
       { status: 400 }
     );
   }
@@ -66,7 +66,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = await createServiceClient();
 
   const { data, error } = await supabase
     .from("expenses")
@@ -114,7 +114,7 @@ export async function DELETE(request: NextRequest) {
     );
   }
 
-  const supabase = await createClient();
+  const supabase = await createServiceClient();
 
   const { error } = await supabase.from("expenses").delete().eq("id", id);
 

@@ -1,4 +1,5 @@
 import { type ClassValue, clsx } from "clsx";
+import { CHOPP_PER_PERSON_L } from "@/lib/constants";
 
 export function cn(...inputs: ClassValue[]) {
   return clsx(inputs);
@@ -22,12 +23,12 @@ export function formatDate(date: string | Date): string {
 }
 
 /** Calcula barris de chopp necessarios.
- *  - 4L por pessoa
+ *  - CHOPP_PER_PERSON_L litros por pessoa
  *  - Barris de 30L ou 50L
  *  - Pode arredondar para baixo ate 20% da quantidade necessaria
  */
 export function calcChopp(people: number) {
-  const needed = people * 4;
+  const needed = people * CHOPP_PER_PERSON_L;
   const minAcceptable = needed * 0.8;
 
   let best = { barrels30: 0, barrels50: 0, total: 0, waste: Infinity };
@@ -58,4 +59,19 @@ export function calculateBottleCost(
   if (checkins === 0) return 0;
   const bottles = Math.ceil(checkins / peoplePerBottle);
   return (bottles * bottlePrice) / checkins;
+}
+
+/** True se a URL aponta pra uma imagem (extensao de imagem ou bucket de receipts).
+ *  Usado pra decidir entre miniatura (foto) e link (nota fiscal digital). */
+export function isImageUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return (
+    /\.(jpe?g|png|webp|heic|gif|avif)(\?|#|$)/i.test(url) ||
+    url.includes("/storage/v1/object/public/receipts/")
+  );
+}
+
+/** Garante que o link tenha protocolo (pra abrir em nova aba sem virar relativo). */
+export function ensureHttp(url: string): string {
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
 }

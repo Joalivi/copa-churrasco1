@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Activity } from "@/types";
 import { PendingToast } from "@/components/layout/pending-toast";
 import { formatCurrency, calculateBottleCost, calcChopp, cn } from "@/lib/utils";
+import { MEAT_PER_PERSON_KG, MEAT_PRICE_PER_KG } from "@/lib/constants";
 
 // Disclaimer informacional sobre o uso do dinheiro arrecadado em cada
 // atividade. Texto fixo (regra do evento) — keyed por activity.name pra
@@ -76,9 +77,9 @@ export function ActivityCard({
         return `~${formatCurrency(bottleCost)}/pessoa`;
       case "total_split": {
         if (activity.checkin_count === 0) return "Valor a definir";
-        // Churrasco: 500g/pessoa x R$40/kg = R$20/pessoa
+        // Churrasco: MEAT_PER_PERSON_KG x MEAT_PRICE_PER_KG por pessoa
         if (activity.name === "Churrasco") {
-          const perPerson = 0.5 * 40;
+          const perPerson = MEAT_PER_PERSON_KG * MEAT_PRICE_PER_KG;
           return `~${formatCurrency(perPerson)}/pessoa`;
         }
         // Chopp: litros dos barris x R$12/L / checkins
@@ -164,15 +165,15 @@ export function ActivityCard({
           {/* Info estimativa — Churrasco */}
           {activity.name === "Churrasco" && activity.checkin_count > 0 && (() => {
             const count = activity.checkin_count;
-            const meatKg = count * 0.5;
-            const meatCost = meatKg * 40;
+            const meatKg = count * MEAT_PER_PERSON_KG;
+            const meatCost = meatKg * MEAT_PRICE_PER_KG;
             return (
               <div className="mt-2 bg-red-50/60 border border-red-100 rounded-xl px-3 py-2 space-y-1">
                 <p className="text-xs text-zinc-600">
-                  <span className="font-semibold">Carne total:</span> {meatKg.toFixed(1)}kg <span className="text-zinc-400">({count} x 500g)</span>
+                  <span className="font-semibold">Carne total:</span> {meatKg.toFixed(1)}kg <span className="text-zinc-400">({count} x {Math.round(MEAT_PER_PERSON_KG * 1000)}g)</span>
                 </p>
                 <p className="text-xs text-zinc-600">
-                  <span className="font-semibold">Custo estimado:</span> {formatCurrency(meatCost)} <span className="text-zinc-400">({meatKg.toFixed(1)}kg x R$40)</span>
+                  <span className="font-semibold">Custo estimado:</span> {formatCurrency(meatCost)} <span className="text-zinc-400">({meatKg.toFixed(1)}kg x R${MEAT_PRICE_PER_KG})</span>
                 </p>
                 <p className="text-[10px] text-zinc-400">
                   Fechamento: {formatCurrency(meatCost / count)}/pessoa
