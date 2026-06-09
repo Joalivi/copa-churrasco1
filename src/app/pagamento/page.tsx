@@ -24,6 +24,29 @@ interface ItemSelecionavel {
   pago: boolean;
   isDynamic?: boolean;
   checkinCount?: number;
+  breakdown?: { label: string; perPerson: number }[];
+}
+
+/** Sub-linhas que detalham a composição de um item de rateio. */
+function RateioBreakdown({
+  breakdown,
+}: {
+  breakdown?: { label: string; perPerson: number }[];
+}) {
+  if (!breakdown || breakdown.length === 0) return null;
+  return (
+    <div className="mt-1.5 space-y-0.5 border-t border-zinc-100 pt-1.5">
+      {breakdown.map((b, i) => (
+        <p
+          key={i}
+          className="text-[11px] text-zinc-500 flex justify-between gap-2"
+        >
+          <span>{b.label}</span>
+          <span className="tabular-nums">{formatCurrency(b.perPerson)}</span>
+        </p>
+      ))}
+    </div>
+  );
 }
 
 interface UserSummary {
@@ -50,6 +73,7 @@ interface UserSummary {
   }>;
   expense_share: number;
   rental_share: number;
+  expense_breakdown: { description: string; perPerson: number }[];
   total_owed: number;
   total_paid: number;
   total_paid_display: number;
@@ -183,6 +207,13 @@ function PagamentoContent() {
     const totalExpenseShare =
       Math.round((summary.expense_share + summary.rental_share) * 100) / 100;
     if (totalExpenseShare > 0) {
+      const breakdown = [
+        { label: "Aluguel (restante)", perPerson: summary.rental_share },
+        ...(summary.expense_breakdown ?? []).map((e) => ({
+          label: e.description,
+          perPerson: e.perPerson,
+        })),
+      ].filter((b) => b.perPerson > 0);
       itens.push({
         key: "expense_share",
         type: "expense_share",
@@ -191,6 +222,7 @@ function PagamentoContent() {
         pago: expensePago,
         isDynamic: true,
         checkinCount: summary.confirmed_count,
+        breakdown,
       });
     }
 
@@ -506,6 +538,7 @@ function PagamentoContent() {
                               <p className="text-xs text-zinc-500 capitalize">
                                 {item.type === "expense_share" ? "Rateio" : "Confirmação de presença"}
                               </p>
+                              <RateioBreakdown breakdown={item.breakdown} />
                             </div>
                             <p className="text-sm font-bold text-foreground shrink-0">
                               {formatCurrency(item.amount)}
@@ -667,7 +700,7 @@ function PagamentoContent() {
                   {itensBloqueados.map((item) => (
                     <div
                       key={item.key}
-                      className="card flex items-center gap-3 opacity-70 border border-zinc-200"
+                      className="card flex items-start gap-3 opacity-70 border border-zinc-200"
                     >
                       <span className="text-zinc-400 text-sm">🔒</span>
                       <div className="flex-1 min-w-0">
@@ -681,6 +714,7 @@ function PagamentoContent() {
                           {item.checkinCount ? " · " : ""}
                           {formatCurrency(item.amount)} por pessoa (estimado)
                         </p>
+                        <RateioBreakdown breakdown={item.breakdown} />
                       </div>
                       <p className="text-sm font-bold text-zinc-400 shrink-0">
                         {formatCurrency(item.amount)}
