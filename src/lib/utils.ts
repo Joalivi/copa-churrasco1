@@ -59,3 +59,18 @@ export function calculateBottleCost(
   const bottles = Math.ceil(checkins / peoplePerBottle);
   return (bottles * bottlePrice) / checkins;
 }
+
+/** True se a URL aponta pra uma imagem (extensao de imagem ou bucket de receipts).
+ *  Usado pra decidir entre miniatura (foto) e link (nota fiscal digital). */
+export function isImageUrl(url: string | null | undefined): boolean {
+  if (!url) return false;
+  return (
+    /\.(jpe?g|png|webp|heic|gif|avif)(\?|#|$)/i.test(url) ||
+    url.includes("/storage/v1/object/public/receipts/")
+  );
+}
+
+/** Garante que o link tenha protocolo (pra abrir em nova aba sem virar relativo). */
+export function ensureHttp(url: string): string {
+  return /^https?:\/\//i.test(url) ? url : `https://${url}`;
+}

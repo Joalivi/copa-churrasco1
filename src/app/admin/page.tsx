@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { PageContainer } from "@/components/layout/page-container";
-import { formatCurrency, formatDate } from "@/lib/utils";
+import { formatCurrency, formatDate, isImageUrl } from "@/lib/utils";
 import type { Activity, Expense } from "@/types";
 
 // ── Helpers ──────────────────────────────────────────────
@@ -275,12 +275,31 @@ function DespesasTab() {
           Dividir entre todos os confirmados
         </label>
 
-        {/* Foto da nota */}
+        {/* Nota fiscal (opcional) — cole o link OU suba a foto */}
         <div className="space-y-2">
           <label className="block text-xs font-medium text-zinc-600">
-            Foto da nota (opcional)
+            Nota fiscal (opcional)
           </label>
-          {receiptUrl ? (
+          <input
+            type="url"
+            inputMode="url"
+            placeholder="Cole o link da nota fiscal digital"
+            value={receiptUrl ?? ""}
+            onChange={(e) => setReceiptUrl(e.target.value.trim() || null)}
+            className="w-full border border-zinc-300 rounded-lg p-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-green"
+          />
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] text-zinc-400 shrink-0">ou suba a foto:</span>
+            <input
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleFileSelect}
+              disabled={uploading}
+              className="block w-full text-xs text-zinc-600 file:mr-2 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-green file:text-white file:text-xs file:cursor-pointer disabled:opacity-50"
+            />
+          </div>
+          {receiptUrl && isImageUrl(receiptUrl) && (
             <div className="flex items-center gap-2">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -296,15 +315,6 @@ function DespesasTab() {
                 Remover
               </button>
             </div>
-          ) : (
-            <input
-              type="file"
-              accept="image/*"
-              capture="environment"
-              onChange={handleFileSelect}
-              disabled={uploading}
-              className="block w-full text-xs text-zinc-600 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:bg-green file:text-white file:text-xs file:cursor-pointer disabled:opacity-50"
-            />
           )}
           {uploading && (
             <p className="text-xs text-zinc-400">Subindo imagem...</p>

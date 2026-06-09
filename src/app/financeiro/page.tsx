@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState, useCallback } from "react";
 import { PageContainer } from "@/components/layout/page-container";
-import { formatCurrency } from "@/lib/utils";
+import { formatCurrency, isImageUrl, ensureHttp } from "@/lib/utils";
 import { MEAT_PER_PERSON_KG } from "@/lib/constants";
 import type { Expense } from "@/types";
 
@@ -230,7 +230,7 @@ export default function FinanceiroPage() {
                       key={expense.id}
                       className="card flex items-start gap-3 py-3"
                     >
-                      {receipt ? (
+                      {receipt && isImageUrl(receipt) ? (
                         <button
                           type="button"
                           onClick={() => setLightboxUrl(receipt)}
@@ -250,9 +250,21 @@ export default function FinanceiroPage() {
                           🥩
                         </div>
                       )}
-                      <p className="flex-1 text-sm font-medium text-foreground whitespace-pre-line break-words">
-                        {expense.description}
-                      </p>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-foreground whitespace-pre-line break-words">
+                          {expense.description}
+                        </p>
+                        {receipt && !isImageUrl(receipt) && (
+                          <a
+                            href={ensureHttp(receipt)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-[11px] text-blue underline mt-1 inline-block"
+                          >
+                            📄 Nota fiscal ↗
+                          </a>
+                        )}
+                      </div>
                       <p className="text-sm font-bold text-foreground shrink-0">
                         {formatCurrency(expense.amount)}
                       </p>
@@ -306,8 +318,8 @@ export default function FinanceiroPage() {
                     key={expense.id}
                     className="card flex items-start gap-3 py-3 hover:shadow-lg transition-shadow duration-200"
                   >
-                    {/* Foto da nota (ou ícone da categoria) */}
-                    {receipt ? (
+                    {/* Foto da nota (miniatura) ou ícone da categoria */}
+                    {receipt && isImageUrl(receipt) ? (
                       <button
                         type="button"
                         onClick={() => setLightboxUrl(receipt)}
@@ -338,6 +350,16 @@ export default function FinanceiroPage() {
                       <p className="text-sm font-medium text-foreground whitespace-pre-line break-words">
                         {expense.description}
                       </p>
+                      {receipt && !isImageUrl(receipt) && (
+                        <a
+                          href={ensureHttp(receipt)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] text-blue underline mt-1 inline-block"
+                        >
+                          📄 Nota fiscal ↗
+                        </a>
+                      )}
                     </div>
 
                     {/* Valor */}
